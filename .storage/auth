@@ -1,0 +1,61 @@
+{
+    "version": 1,
+    "key": "auth",
+    "data": {
+        "users": [
+            {
+                "id": "ed1a7e913daf4930960af58f4390c89d",
+                "group_ids": [
+                    "system-admin"
+                ],
+                "is_owner": true,
+                "is_active": true,
+                "name": "amalko",
+                "system_generated": false
+            }
+        ],
+        "groups": [
+            {
+                "id": "system-admin",
+                "name": "Administrators"
+            },
+            {
+                "id": "system-users",
+                "name": "Users"
+            },
+            {
+                "id": "system-read-only",
+                "name": "Read Only"
+            }
+        ],
+        "credentials": [
+            {
+                "id": "b72755f1344342ae9e2fb60233c354e2",
+                "user_id": "ed1a7e913daf4930960af58f4390c89d",
+                "auth_provider_type": "homeassistant",
+                "auth_provider_id": null,
+                "data": {
+                    "username": "amalko"
+                }
+            }
+        ],
+        "refresh_tokens": [
+            {
+                "id": "ad62883f39814f7a9a175f359ce92f41",
+                "user_id": "ed1a7e913daf4930960af58f4390c89d",
+                "client_id": "http://localhost:8123/",
+                "client_name": null,
+                "client_icon": null,
+                "token_type": "normal",
+                "created_at": "2021-07-04T18:59:28.902220+00:00",
+                "access_token_expiration": 1800.0,
+                "token": "a9c3864c3960698171da6c64ecbbc37a909ce5a3b987812f5d2cfe10522b27bd9bd5cef20e2216fa70d87cc96c00a7306e00a4fff163f960bdfe575b5d8a2ceb",
+                "jwt_key": "e18e61226616f14071cdcd8c0a9269e8a10e3dec69886a5fbdcafc6e0910225baace56f68a4e9c4fa9edad612253b8b7b8211d7cb948e4629d1f5fe3fc98c3ae",
+                "last_used_at": "2021-07-04T18:59:28.902367+00:00",
+                "last_used_ip": "192.168.96.1",
+                "credential_id": "b72755f1344342ae9e2fb60233c354e2",
+                "version": "2021.6.6"
+            }
+        ]
+    }
+}
