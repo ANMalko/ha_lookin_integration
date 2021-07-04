@@ -12,6 +12,9 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             LOGGER.debug("Service break config")
+            return self.async_create_entry(
+                title=user_input[CONF_DEVICE], data=user_input
+            )
 
         data_schema = {vol.Required(CONF_DEVICE): str}
 

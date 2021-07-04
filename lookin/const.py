@@ -1,6 +1,6 @@
 import logging
 
-DOMAIN = "LookIn"
+DOMAIN = "lookin"
 CONF_DEVICE = "device"
 
 LOGGER = logging.getLogger(__name__)
