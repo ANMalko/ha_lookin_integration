@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
-from .const import DOMAIN, LOGGER, CONF_DEVICE
+from homeassistant.const import CONF_DEVICE
+
+from .const import DOMAIN, LOGGER
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -8,8 +10,8 @@ if TYPE_CHECKING:
 
 
 async def async_setup_entry(hass: "HomeAssistant", config_entry: "ConfigEntry") -> bool:
-    LOGGER.debug("Hello_service started")
+    LOGGER.debug("Lookin service started")
     device = config_entry.data.get(CONF_DEVICE)
-    LOGGER.debug("Hello_service test message, device <%s>", device)
+    LOGGER.debug("Lookin service test message, device <%s>", device)
 
     return True

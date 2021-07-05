@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "key": "core.restore_state",
+    "data": [
+        {
+            "state": {
+                "entity_id": "person.amalko",
+                "state": "unknown",
+                "attributes": {
+                    "editable": false,
+                    "id": "amalko",
+                    "user_id": "e41b34abd6a2434b93ba05fffa31fa59",
+                    "friendly_name": "amalko"
+                },
+                "last_changed": "2021-07-05T07:27:04.512185+00:00",
+                "last_updated": "2021-07-05T07:27:05.778026+00:00",
+                "context": {
+                    "id": "7d51fb2fcfbd4101e1af812600c72d62",
+                    "parent_id": null,
+                    "user_id": null
+                }
+            },
+            "last_seen": "2021-07-05T07:30:31.498591+00:00"
+        }
+    ]
+}

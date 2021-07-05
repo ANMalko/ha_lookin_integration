@@ -1,9 +1,9 @@
 {
   "config": {
     "step": {
-      "init": {
-        "title": "LookIn",
-        "description": "Enter your device id",
+      "user": {
+        "title": "Set up Lookin device",
+        "description": "Enter your LookIn device id",
         "data": {
           "device": "[%key:common::config_flow::data::device%]"
         }
@@ -13,7 +13,8 @@
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"
     },
     "abort": {
-      "single_instance_allowed": "[%key:common::config_flow::abort::single_instance_allowed%]"
+      "single_instance_allowed": "[%key:common::config_flow::abort::single_instance_allowed%]",
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"
     }
   }
 }

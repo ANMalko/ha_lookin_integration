@@ -4,7 +4,8 @@ services:
     container_name: homeassistant
     image: "ghcr.io/home-assistant/home-assistant:stable"
     volumes:
-      - ~/Documents/Projects/MyProject/ha_integration/ha_config:/config
+      - ./ha_config:/config
+      - ./lookin:/config/custom_components/lookin
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 8123:8123
