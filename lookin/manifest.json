@@ -3,6 +3,7 @@
   "name": "LookIn",
   "documentation": "https://www.home-assistant.io/integrations/icloud",
   "codeowners": [],
+  "zeroconf": ["_lookin._tcp.local."],
   "config_flow": true,
   "iot_class": "local_push",
   "version": "0.0.1"

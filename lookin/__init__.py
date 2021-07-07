@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 
 
 async def async_setup_entry(hass: "HomeAssistant", config_entry: "ConfigEntry") -> bool:
-    LOGGER.debug("Lookin service started")
+    LOGGER.warning("Lookin service started")
     device = config_entry.data.get(CONF_DEVICE)
-    LOGGER.debug("Lookin service test message, device <%s>", device)
+    LOGGER.warning("Lookin service test message, device <%s>", device)
 
     return True

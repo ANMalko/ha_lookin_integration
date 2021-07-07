@@ -7,6 +7,10 @@
         "data": {
           "device": "[%key:common::config_flow::data::device%]"
         }
+      },
+      "discovery_confirm": {
+        "description": "Do you want to add Lookin (`{name}`) to Home Assistant?",
+        "title": "Discovered Kodi"
       }
     },
     "error": {
