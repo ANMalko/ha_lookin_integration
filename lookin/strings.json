@@ -10,7 +10,7 @@
       },
       "discovery_confirm": {
         "description": "Do you want to add Lookin (`{name}`) to Home Assistant?",
-        "title": "Discovered Kodi"
+        "title": "Discovered"
       }
     },
     "error": {

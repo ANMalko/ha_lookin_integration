@@ -1,7 +1,7 @@
 {
   "domain": "lookin",
   "name": "LookIn",
-  "documentation": "https://www.home-assistant.io/integrations/icloud",
+  "documentation": "https://www.home-assistant.io/integrations/",
   "codeowners": [],
   "zeroconf": ["_lookin._tcp.local."],
   "config_flow": true,
