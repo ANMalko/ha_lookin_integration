@@ -1,5 +1,5 @@
-from homeassistant import config_entries
 import voluptuous as vol
+from homeassistant import config_entries
 from homeassistant.const import CONF_DEVICE
 from homeassistant.helpers.typing import DiscoveryInfoType
 
@@ -14,6 +14,9 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_zeroconf(self, discovery_info: DiscoveryInfoType):
         LOGGER.warning("Lookin service zeroconf started")
         LOGGER.warning("discovery_info - <%s>", discovery_info)
+        return self.async_show_form(
+            step_id="discovery_confirm", description_placeholders={"name": "lookin device"}
+        )
 
     async def async_step_user(self, user_input=None):
         errors = {}
