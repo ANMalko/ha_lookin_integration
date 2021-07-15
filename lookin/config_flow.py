@@ -1,6 +1,6 @@
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_DEVICE
+from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.helpers.typing import DiscoveryInfoType
 
 from .const import DOMAIN, LOGGER
@@ -27,16 +27,16 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             LOGGER.warning("Lokin service config")
 
-            device = user_input[CONF_DEVICE]
+            device = user_input[CONF_IP_ADDRESS]
 
-            self.device_config = {CONF_DEVICE: device}
+            self.device_config = {CONF_IP_ADDRESS: device}
 
             return self.async_create_entry(
-                title=f"LookIn device controller - {user_input[CONF_DEVICE]}", data=user_input
+                title=f"LookIn device controller - {user_input[CONF_IP_ADDRESS]}", data=user_input
             )
 
         LOGGER.warning("Lokin service config show_form")
-        data_schema = {vol.Required(CONF_DEVICE, default=CONF_DEVICE): str}
+        data_schema = {vol.Required(CONF_IP_ADDRESS, default=CONF_IP_ADDRESS): str}
 
         return self.async_show_form(
             step_id="user",

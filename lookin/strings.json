@@ -3,9 +3,9 @@
     "step": {
       "user": {
         "title": "Set up Lookin device",
-        "description": "Enter your LookIn device id",
+        "description": "Enter your LookIn device шз",
         "data": {
-          "device": "[%key:common::config_flow::data::device%]"
+          "ip_address": "[%key:common::config_flow::data::ip_address%]"
         }
       },
       "discovery_confirm": {
