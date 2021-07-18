@@ -1,14 +1,46 @@
+#version: '3.8'
+#services:
+#  hass:
+#    container_name: hass
+#    image: "ghcr.io/home-assistant/home-assistant:2021.7.2"
+#    volumes:
+#      - ./ha_config:/config
+#      - ./lookin:/config/custom_components/lookin
+#      - /etc/localtime:/etc/localtime:ro
+#    environment:
+#      - TZ=Europe/Moscow
+##    ports:
+##      - 8123:8123
+##    networks:
+##      default:
+##        ipv4_address: 192.168.88.100
+##    ports:
+##      - "127.0.0.1:8123:8123"
+#    restart: unless-stopped
+#    privileged: true
+#    network_mode: host
+##
+##networks:
+##  default:
+##    driver: bridge
+##    ipam:
+##      driver: default
+##      config:
+##        - subnet: 192.168.88.0/24
+##          gateway: 192.168.88.1
+##    driver_opts:
+##      com.docker.network.driver.mtu: 1450
+
 version: '3'
 services:
   homeassistant:
     container_name: homeassistant
-    image: "ghcr.io/home-assistant/home-assistant:stable"
+    image: "ghcr.io/home-assistant/home-assistant:2021.7.3"
     volumes:
       - ./ha_config:/config
-      - ./lookin:/config/custom_components/lookin
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 8123:8123
-    restart: unless-stopped
+    restart: always
     privileged: true
-    # network_mode: host
+    network_mode: host
+#    expose:
+#      - "8123"
