@@ -22,8 +22,6 @@ class Endpoint:
         if not (message := MessageParser.parser(data.decode())):
             return
 
-        print(f"{addr=}")
-        print(f"{message=}")
         LOGGER.warning("addr <%s>", addr)
         LOGGER.warning("message <%s>", message)
 
