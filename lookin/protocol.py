@@ -81,18 +81,16 @@ class LookInClientProtocol:
         self._endpoint._transport = transport
 
     def datagram_received(self, data, addr):
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Received:", data.decode())
+        # print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Received:", data.decode())
         self._endpoint.feed_datagram(data, addr)
-        # message = MessageParser.parser(data.decode())
-        # print(f"{message=}")
 
     def error_received(self, exc):
-        print('Error received:', exc)
+        # print('Error received:', exc)
         msg = 'Endpoint received an error: {!r}'
         warnings.warn(msg.format(exc))
 
     def connection_lost(self, exc):
-        print("Socket closed, stop the event loop")
+        # print("Socket closed, stop the event loop")
         assert exc is None
         if self._endpoint._write_ready_future is not None:
             self._endpoint._write_ready_future.set_result(None)
