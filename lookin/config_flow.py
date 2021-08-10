@@ -2,8 +2,10 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_IP_ADDRESS, CONF_NAME
+from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_IP_ADDRESS,
+                                 CONF_NAME)
 from homeassistant.core import callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import DiscoveryInfoType
 
 from .const import DOMAIN, LOGGER
@@ -23,6 +25,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self):
         self._host: Optional[str] = None
         self._name: Optional[str] = None
+        self._device_id: Optional[str] = None
 
     async def async_step_zeroconf(self, discovery_info: DiscoveryInfoType):
         uid: str = discovery_info["hostname"][: -len(".local.")]
@@ -75,11 +78,12 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(
-                    device.id.upper(),raise_on_progress=False
+                    device.id.upper(), raise_on_progress=False
                 )
 
                 self._name = device.name
                 self._host = host
+                self._device_id = device.id
 
                 return await self.async_step_device_name()
 
@@ -90,7 +94,9 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def _validate_device(self, host: str) -> "Device":
-        lookin_protocol = LookInHttpProtocol(host=host, hass=self.hass)
+        lookin_protocol = LookInHttpProtocol(
+            host=host, session=async_get_clientsession(self.hass)
+        )
         
         device = await lookin_protocol.get_device_info()
 
@@ -107,7 +113,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             name = user_input[CONF_NAME]
             lookin_protocol = LookInHttpProtocol(
-                host=self._host, hass=self.hass
+                host=self._host, session=async_get_clientsession(self.hass)
             )
 
             try:
@@ -150,6 +156,10 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     @callback
     def _get_data(self):
-        data = {CONF_NAME: self._name}
+        data = {
+            CONF_NAME: self._name,
+            CONF_HOST: self._host,
+            CONF_DEVICE_ID: self._device_id
+        }
 
         return data
