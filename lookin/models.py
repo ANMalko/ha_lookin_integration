@@ -1,7 +1,7 @@
 from dataclasses import InitVar, dataclass, field
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
-__all__ = ("Device", "MeteoSensor",)
+__all__ = ("Device", "MeteoSensor", "Climate", "Remote")
 
 
 @dataclass
@@ -20,35 +20,84 @@ class Device:
     homekit: int = field(init=False)
     ecomode: bool = field(init=False)
     sensormode: int = field(init=False)
-    device_info_dict: InitVar[Dict[str, str]]
+    _data: InitVar[Dict[str, str]]
 
-    def __post_init__(self, device_info_dict: Dict[str, str]):
-        self.type = device_info_dict["Type"]
-        self.mrdc = device_info_dict["MRDC"]
-        self.status = device_info_dict["Status"]
-        self.id = device_info_dict["ID"].upper()
-        self.name = device_info_dict["Name"]
-        self.time = int(device_info_dict["Time"])
-        self.timezone = int(device_info_dict["Timezone"])
-        self.powermode = device_info_dict["PowerMode"]
-        self.currentvoltage = int(device_info_dict["CurrentVoltage"])
-        self.firmware = float(device_info_dict["Firmware"])
-        self.temperature = int(device_info_dict["Temperature"])
-        self.homekit = int(device_info_dict["HomeKit"])
-        self.ecomode = device_info_dict["EcoMode"] == "on"
-        self.sensormode = int(device_info_dict["SensorMode"])
+    def __post_init__(self, _data: Dict[str, str]):
+        self.type = _data["Type"]
+        self.mrdc = _data["MRDC"]
+        self.status = _data["Status"]
+        self.id = _data["ID"].upper()
+        self.name = _data["Name"]
+        self.time = int(_data["Time"])
+        self.timezone = int(_data["Timezone"])
+        self.powermode = _data["PowerMode"]
+        self.currentvoltage = int(_data["CurrentVoltage"])
+        self.firmware = float(_data["Firmware"])
+        self.temperature = int(_data["Temperature"])
+        self.homekit = int(_data["HomeKit"])
+        self.ecomode = _data["EcoMode"] == "on"
+        self.sensormode = int(_data["SensorMode"])
 
 
 @dataclass
 class MeteoSensor:
     humidity: float = field(init=False)
-    pressure: int = field(init=False)
+    pressure: float = field(init=False)
     temperature: float = field(init=False)
     updated: int = field(init=False)
-    meteo_sensor_dict: InitVar[Dict[str, str]]
+    _data: InitVar[Dict[str, str]]
 
-    def __post_init__(self, meteo_sensor_dict: Dict[str, str]):
-        self.humidity = float(meteo_sensor_dict["Humidity"])
-        self.pressure = int(meteo_sensor_dict["Pressure"])
-        self.temperature = float(meteo_sensor_dict["Temperature"])
-        self.updated = int(meteo_sensor_dict["Updated"])
+    def __post_init__(self, _data: Dict[str, str]):
+        self.humidity = float(_data["Humidity"])
+        self.pressure = float(_data["Pressure"])
+        self.temperature = float(_data["Temperature"])
+        self.updated = int(_data["Updated"])
+
+
+@dataclass
+class Functions:
+    name: str = field(init=False)
+    type: str = field(init=False)
+    data_dict: InitVar[Dict[str, Any]]
+
+    def __post_init__(self, data_dict: Dict[str, Any]):
+        self.type = data_dict["Type"]
+        self.name = data_dict["Name"]
+
+
+@dataclass
+class Remote:
+    type: str = field(init=False)
+    name: str = field(init=False)
+    updated: int = field(init=False)
+    status: Optional[str] = field(init=False)
+    laststatus: Optional[str] = field(init=False)
+    functions: List[Functions] = field(init=False)
+    _data: InitVar[Dict[str, Any]]
+
+    def __post_init__(self, _data: Dict[str, Any]):
+        self.type = _data["Type"]
+        self.name = _data["Name"]
+        self.updated = int(_data["Updated"])
+        self.status = _data.get("Status")
+        self.laststatus = _data.get("LastStatus")
+        self.functions = [
+            Functions(data_dict=function) for function in _data["Functions"]
+        ]
+
+
+@dataclass
+class Climate(Remote):
+    extra: str = field(init=False)
+    hvac_mode: int = field(init=False)
+    temperature: hex = field(init=False)
+    fan_mode: int = field(init=False)
+    swing_mode: int = field(init=False)
+
+    def __post_init__(self, _data: Dict[str, Any]):
+        self.extra = _data["Extra"]
+        self.hvac_mode = int(_data["Status"][0])
+        self.temperature = int(_data["Status"][1], 16)
+        self.fan_mode = int(_data["Status"][2])
+        self.swing_mode = int(_data["Status"][3])
+        super().__post_init__(_data)

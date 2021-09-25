@@ -1,13 +1,12 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_NAME,
                                  CONF_OFFSET, DEVICE_CLASS_HUMIDITY,
                                  DEVICE_CLASS_TEMPERATURE, DEVICE_DEFAULT_NAME,
-                                 PERCENTAGE, TEMP_CELSIUS, TEMP_FAHRENHEIT)
+                                 PERCENTAGE, TEMP_CELSIUS)
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.entity import Entity
 
 from . import LookinSensor
 from .const import DOMAIN, LOGGER
@@ -17,7 +16,7 @@ from .protocol import LookInHttpProtocol
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
-
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 CONF_SCALE = "scale"
 
@@ -33,15 +32,11 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 async def async_setup_entry(
     hass: "HomeAssistant",
     config_entry: "ConfigEntry",
-    async_add_entities,
-):
-    """Setup sensors from a config entry created in the integrations UI."""
-    LOGGER.warning("config_2 - <%s>", hass.data[DOMAIN][config_entry.entry_id])
+    async_add_entities: "AddEntitiesCallback",
+) -> None:
+    LOGGER.warning("config - <%s>", hass.data[DOMAIN][config_entry.entry_id])
 
     config = hass.data[DOMAIN][config_entry.entry_id]
-    # Update our config to include new repos and remove those that have been removed.
-    # if config_entry.options:
-    #     config.update(config_entry.options)
 
     LOGGER.warning("config[CONF_HOST] - <%s>", config[CONF_HOST])
 
@@ -66,7 +61,6 @@ async def async_setup_entry(
 
 
 class TemperSensor(LookinSensor):
-    """Representation of a Temper temperature sensor."""
 
     def __init__(
         self,
@@ -89,7 +83,7 @@ class TemperSensor(LookinSensor):
     async def async_update(self):
         try:
             meteo_data = await self._lookin_protocol.get_meteo_sensor()
-            device = await self._lookin_protocol.get_device_info()
+            device = await self._lookin_protocol.get_info()
         except NoUsableService:
             self._is_available = False
             LOGGER.error("No usable service")
@@ -98,7 +92,7 @@ class TemperSensor(LookinSensor):
             LOGGER.error("No device found")
         except Exception:  # pylint: disable=broad-except
             self._is_available = False
-            LOGGER.error("Unexpected exception")
+            LOGGER.exception("Unexpected exception")
         else:
             self.current_value = meteo_data.temperature
             self._firmware = device.firmware
@@ -106,7 +100,6 @@ class TemperSensor(LookinSensor):
 
 
 class HumiditySensor(LookinSensor):
-    """Representation of a Temper humidity sensor."""
 
     def __init__(
         self,
@@ -137,7 +130,7 @@ class HumiditySensor(LookinSensor):
             LOGGER.error("No device found")
         except Exception:  # pylint: disable=broad-except
             self._is_available = False
-            LOGGER.error("Unexpected exception")
+            LOGGER.exception("Unexpected exception")
         else:
             self.current_value = meteo_data.humidity
             self._is_available = True

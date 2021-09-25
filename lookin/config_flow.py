@@ -98,7 +98,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             host=host, session=async_get_clientsession(self.hass)
         )
         
-        device = await lookin_protocol.get_device_info()
+        device = await lookin_protocol.get_info()
 
         if device.id in self._async_current_ids():
             raise DeviceAlreadyConfigured
