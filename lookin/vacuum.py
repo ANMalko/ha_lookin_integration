@@ -1,8 +1,12 @@
-from typing import TYPE_CHECKING, Final, Optional
+from typing import TYPE_CHECKING, Any, Dict
 
-from homeassistant.components.vacuum import (SERVICE_START, SERVICE_STOP,
-                                             SUPPORT_TURN_OFF, SUPPORT_TURN_ON,
-                                             VacuumEntity)
+from homeassistant.components.vacuum import (
+    SERVICE_START,
+    SERVICE_STOP,
+    SUPPORT_TURN_OFF,
+    SUPPORT_TURN_ON,
+    VacuumEntity,
+)
 from homeassistant.const import CONF_HOST
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -17,7 +21,7 @@ if TYPE_CHECKING:
     from .models import Remote
 
 
-SUPPORT_FLAGS: Final = (
+SUPPORT_FLAGS: int = (
         SUPPORT_TURN_ON |
         SUPPORT_TURN_OFF
 )
@@ -35,12 +39,15 @@ async def async_setup_entry(
 
     entities = []
 
-    for device in await lookin_protocol.get_devices():
-        if device["Type"] == "06":
+    for remote in await lookin_protocol.get_devices():
+        if remote["Type"] == "06":
+            uuid = remote["UUID"]
+            device = await lookin_protocol.get_remote(uuid)
             entities.append(
                 LookinVacuum(
-                    uuid=device["UUID"],
+                    uuid=uuid,
                     lookin_protocol=lookin_protocol,
+                    device=device
                 )
             )
 
@@ -50,10 +57,15 @@ async def async_setup_entry(
 class LookinVacuum(VacuumEntity):
     _attr_should_poll = False
 
-    def __init__(self,  uuid: str, lookin_protocol: "LookInHttpProtocol"):
+    def __init__(
+        self,
+        uuid: str,
+        lookin_protocol: "LookInHttpProtocol",
+        device: "Remote"
+    ) -> None:
         self._uuid = uuid
         self._lookin_protocol = lookin_protocol
-        self._device: Optional["Remote"] = None
+        self._device = device
         self._device_class = "Vacuum"
 
         self._power_on_command: str = "power"
@@ -63,39 +75,6 @@ class LookinVacuum(VacuumEntity):
         self._is_on = False
         self._status = SERVICE_STOP
         self._supported_features = SUPPORT_FLAGS
-
-    @property
-    def name(self) -> str:
-        return self._device.name
-
-    @property
-    def supported_features(self):
-        return self._supported_features
-
-    @property
-    def is_on(self):
-        return self._status != SERVICE_STOP
-
-    @property
-    def status(self):
-        return self._status
-
-    async def async_turn_on(self, **kwargs):
-        await self._lookin_protocol.send_command(
-            uuid=self._uuid, command=self._power_on_command, signal="FF"
-        )
-        self._status = SERVICE_START
-        self.async_write_ha_state()
-
-    async def async_turn_off(self, **kwargs):
-        await self._lookin_protocol.send_command(
-            uuid=self._uuid, command=self._power_off_command, signal="FF"
-        )
-        self._status = SERVICE_STOP
-        self.async_write_ha_state()
-
-    async def async_update(self) -> None:
-        self._device = await self._lookin_protocol.get_remote(self._uuid)
 
         for function in self._device.functions:
             if function.name == "power":
@@ -107,7 +86,37 @@ class LookinVacuum(VacuumEntity):
                 self._power_off_command = "poweroff"
 
     @property
-    def device_info(self):
+    def name(self) -> str:
+        return self._device.name
+
+    @property
+    def supported_features(self) -> int:
+        return self._supported_features
+
+    @property
+    def is_on(self) -> bool:
+        return self._status != SERVICE_STOP
+
+    @property
+    def status(self) -> str:
+        return self._status
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._lookin_protocol.send_command(
+            uuid=self._uuid, command=self._power_on_command, signal="FF"
+        )
+        self._status = SERVICE_START
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._lookin_protocol.send_command(
+            uuid=self._uuid, command=self._power_off_command, signal="FF"
+        )
+        self._status = SERVICE_STOP
+        self.async_write_ha_state()
+
+    @property
+    def device_info(self) -> Dict[str, Any]:
         """Get attributes about the device."""
         return {
             "identifiers": {(DOMAIN, self.unique_id)},

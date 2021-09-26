@@ -2,9 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_IP_ADDRESS,
-                                 CONF_NAME)
-from homeassistant.core import callback
+from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import DiscoveryInfoType
 
@@ -13,6 +11,8 @@ from .error import DeviceAlreadyConfigured, DeviceNotFound, NoUsableService
 from .protocol import LookInHttpProtocol
 
 if TYPE_CHECKING:
+    from homeassistant.data_entry_flow import FlowResult
+
     from .models import Device
 
 ADD_NEW_DEVICE_SCHEMA = vol.Schema(
@@ -20,14 +20,16 @@ ADD_NEW_DEVICE_SCHEMA = vol.Schema(
 )
 
 
-class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._host: Optional[str] = None
         self._name: Optional[str] = None
         self._device_id: Optional[str] = None
 
-    async def async_step_zeroconf(self, discovery_info: DiscoveryInfoType):
+    async def async_step_zeroconf(
+            self, discovery_info: DiscoveryInfoType
+    ) -> Optional["FlowResult"]:
         uid: str = discovery_info["hostname"][: -len(".local.")]
         self._host = discovery_info["host"]
 
@@ -42,14 +44,14 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         try:
-            device = await self._validate_device(host=self._host)
+            device = await self._validate_device(host=self._host)  # type: ignore
         except NoUsableService:
             return self.async_abort(reason="no_usable_service")
         except DeviceNotFound:
             return self.async_abort(reason="no_devices_found")
         except DeviceAlreadyConfigured:
             return self.async_abort(reason="already_configured")
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # noqa
             LOGGER.exception("Unexpected exception")
             return self.async_abort(reason="unknown")
         else:
@@ -59,7 +61,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None
-    ):
+    ) -> "FlowResult":
         errors: Dict[str, str] = {}
 
         if user_input is not None:
@@ -73,7 +75,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "no_devices_found"
             except DeviceAlreadyConfigured:
                 errors["base"] = "already_configured"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # noqa
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
@@ -107,13 +109,13 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_device_name(
         self, user_input: Optional[Dict[str, Any]] = None
-    ):
+    ) -> "FlowResult":
         errors: Dict[str, str] = {}
 
         if user_input is not None:
             name = user_input[CONF_NAME]
             lookin_protocol = LookInHttpProtocol(
-                host=self._host, session=async_get_clientsession(self.hass)
+                host=self._host, session=async_get_clientsession(self.hass)  # type: ignore
             )
 
             try:
@@ -122,7 +124,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "no_usable_service"
             except DeviceNotFound:
                 errors["base"] = "no_devices_found"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # noqa
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
@@ -138,7 +140,9 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors
         )
 
-    async def async_step_discovery_confirm(self, user_input=None):
+    async def async_step_discovery_confirm(
+            self, user_input: Optional[Dict[str, Any]] = None
+    ) -> "FlowResult":
         if user_input is None:
             return self.async_show_form(
                 step_id="discovery_confirm",
@@ -147,15 +151,13 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self._create_entry()
 
-    @callback
-    def _create_entry(self):
+    def _create_entry(self) -> "FlowResult":
         return self.async_create_entry(
             title=self._name,
             data=self._get_data(),
         )
 
-    @callback
-    def _get_data(self):
+    def _get_data(self) -> Dict[str, Any]:
         data = {
             CONF_NAME: self._name,
             CONF_HOST: self._host,

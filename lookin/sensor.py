@@ -2,10 +2,17 @@ from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_NAME,
-                                 CONF_OFFSET, DEVICE_CLASS_HUMIDITY,
-                                 DEVICE_CLASS_TEMPERATURE, DEVICE_DEFAULT_NAME,
-                                 PERCENTAGE, TEMP_CELSIUS)
+from homeassistant.const import (
+    CONF_DEVICE_ID,
+    CONF_HOST,
+    CONF_NAME,
+    CONF_OFFSET,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_TEMPERATURE,
+    DEVICE_DEFAULT_NAME,
+    PERCENTAGE,
+    TEMP_CELSIUS,
+)
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from . import LookinSensor
@@ -77,10 +84,10 @@ class TemperSensor(LookinSensor):
         )
 
     @property
-    def device_class(self):
+    def device_class(self) -> str:
         return DEVICE_CLASS_TEMPERATURE
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         try:
             meteo_data = await self._lookin_protocol.get_meteo_sensor()
             device = await self._lookin_protocol.get_info()
@@ -90,7 +97,7 @@ class TemperSensor(LookinSensor):
         except DeviceNotFound:
             self._is_available = False
             LOGGER.error("No device found")
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # noqa
             self._is_available = False
             LOGGER.exception("Unexpected exception")
         else:
@@ -107,7 +114,7 @@ class HumiditySensor(LookinSensor):
         device_id: str,
         device_name: str,
         unit_of_measurement: str,
-    ):
+    ) -> None:
         self._lookin_protocol = lookin_protocol
         super().__init__(
             device_id=device_id,
@@ -116,10 +123,10 @@ class HumiditySensor(LookinSensor):
         )
 
     @property
-    def device_class(self):
+    def device_class(self) -> str:
         return DEVICE_CLASS_HUMIDITY
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         try:
             meteo_data = await self._lookin_protocol.get_meteo_sensor()
         except NoUsableService:
@@ -128,7 +135,7 @@ class HumiditySensor(LookinSensor):
         except DeviceNotFound:
             self._is_available = False
             LOGGER.error("No device found")
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # noqa
             self._is_available = False
             LOGGER.exception("Unexpected exception")
         else:

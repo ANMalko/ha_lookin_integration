@@ -1,25 +1,22 @@
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Dict, Final, List, Literal
+from typing import TYPE_CHECKING, Any, Dict, Final, List
 
 from aiohttp import ClientError
 
-from .const import (DEVICE_INFO_URL, DEVICES_INFO_URL, INFO_URL,
-                    METEO_SENSOR_URL, SEND_IR_COMMAND, UPDATE_CLIMATE_URL)
+from .const import (
+    DEVICE_INFO_URL,
+    DEVICES_INFO_URL,
+    INFO_URL,
+    METEO_SENSOR_URL,
+    SEND_IR_COMMAND,
+    UPDATE_CLIMATE_URL,
+)
 from .error import DeviceNotFound, NoUsableService
 from .models import Climate, Device, MeteoSensor, Remote
 
 if TYPE_CHECKING:
     from aiohttp import ClientResponse, ClientSession
-
-DEVICES: Literal[
-    "tv", "media", "light", "humidifier", "fan",
-    "air_purifier", "vacuum", "fan", "climate_control"
-]
-COMMANDS: Literal[
-    "power", "poweron", "poweroff", "mode", "mute", "volup",
-    "voldown", "chup", "chdown", "swing", "speed", "cursor", "menu"
-]
 
 DEVICE_TO_CODE: Final = {
     "tv": "1",
@@ -56,7 +53,7 @@ async def validate_response(response: "ClientResponse") -> None:
 
 class LookInHttpProtocol:
 
-    def __init__(self, host: str, session: "ClientSession"):
+    def __init__(self, host: str, session: "ClientSession") -> None:
         self._host = host
         self._session = session
 
@@ -136,11 +133,10 @@ class LookInHttpProtocol:
         payload = await self.get_device(uuid=uuid)
         return Remote(_data=payload)
 
-    async def send_command(self, uuid: str, command: "COMMANDS", signal: str) -> None:
+    async def send_command(self, uuid: str, command: str, signal: str) -> None:
         if not (code := COMMAND_TO_CODE.get(command)):
             return
 
-        print(SEND_IR_COMMAND.format(host=self._host, uuid=uuid, command=code, signal=signal))
         try:
             await self._session.get(
                 url=SEND_IR_COMMAND.format(

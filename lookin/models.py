@@ -15,14 +15,14 @@ class Device:
     timezone: int = field(init=False)
     powermode: str = field(init=False)
     currentvoltage: int = field(init=False)
-    firmware: float = field(init=False)
+    firmware: str = field(init=False)
     temperature: int = field(init=False)
     homekit: int = field(init=False)
     ecomode: bool = field(init=False)
     sensormode: int = field(init=False)
     _data: InitVar[Dict[str, str]]
 
-    def __post_init__(self, _data: Dict[str, str]):
+    def __post_init__(self, _data: Dict[str, str]) -> None:
         self.type = _data["Type"]
         self.mrdc = _data["MRDC"]
         self.status = _data["Status"]
@@ -32,7 +32,7 @@ class Device:
         self.timezone = int(_data["Timezone"])
         self.powermode = _data["PowerMode"]
         self.currentvoltage = int(_data["CurrentVoltage"])
-        self.firmware = float(_data["Firmware"])
+        self.firmware = str(_data["Firmware"])
         self.temperature = int(_data["Temperature"])
         self.homekit = int(_data["HomeKit"])
         self.ecomode = _data["EcoMode"] == "on"
@@ -47,7 +47,7 @@ class MeteoSensor:
     updated: int = field(init=False)
     _data: InitVar[Dict[str, str]]
 
-    def __post_init__(self, _data: Dict[str, str]):
+    def __post_init__(self, _data: Dict[str, str]) -> None:
         self.humidity = float(_data["Humidity"])
         self.pressure = float(_data["Pressure"])
         self.temperature = float(_data["Temperature"])
@@ -60,7 +60,7 @@ class Functions:
     type: str = field(init=False)
     data_dict: InitVar[Dict[str, Any]]
 
-    def __post_init__(self, data_dict: Dict[str, Any]):
+    def __post_init__(self, data_dict: Dict[str, Any]) -> None:
         self.type = data_dict["Type"]
         self.name = data_dict["Name"]
 
@@ -75,7 +75,7 @@ class Remote:
     functions: List[Functions] = field(init=False)
     _data: InitVar[Dict[str, Any]]
 
-    def __post_init__(self, _data: Dict[str, Any]):
+    def __post_init__(self, _data: Dict[str, Any]) -> None:
         self.type = _data["Type"]
         self.name = _data["Name"]
         self.updated = int(_data["Updated"])
@@ -90,11 +90,11 @@ class Remote:
 class Climate(Remote):
     extra: str = field(init=False)
     hvac_mode: int = field(init=False)
-    temperature: hex = field(init=False)
+    temperature: int = field(init=False)
     fan_mode: int = field(init=False)
     swing_mode: int = field(init=False)
 
-    def __post_init__(self, _data: Dict[str, Any]):
+    def __post_init__(self, _data: Dict[str, Any]) -> None:
         self.extra = _data["Extra"]
         self.hvac_mode = int(_data["Status"][0])
         self.temperature = int(_data["Status"][1], 16)

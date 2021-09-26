@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_NAME
 from homeassistant.helpers.entity import Entity
@@ -39,7 +39,7 @@ class LookinSensor(Entity):
         device_id: str,
         device_name: str,
         unit_of_measurement: str
-    ):
+    ) -> None:
         self.current_value: Optional[Any] = None
         self._device_id = device_id
         self._name = f"{DOMAIN}.{device_name}.{self.device_class}"
@@ -49,11 +49,11 @@ class LookinSensor(Entity):
         self._firmware: Optional[str] = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def state(self):
+    def state(self) -> Optional[Any]:
         return self.current_value
 
     @property
@@ -61,19 +61,19 @@ class LookinSensor(Entity):
         return self._unique_id
 
     @property
-    def device_id(self):
+    def device_id(self) -> str:
         return self._device_id
 
     @property
-    def unit_of_measurement(self):
+    def unit_of_measurement(self) -> str:
         return self._unit_of_measurement
 
     @property
-    def available(self):
+    def available(self) -> bool:
         return self._is_available
 
     @property
-    def device_info(self):
+    def device_info(self) -> Dict[str, Any]:
         return {
             "identifiers": {
                 (DOMAIN, self.device_id)
