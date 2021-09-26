@@ -11,3 +11,8 @@ UPDATE_CLIMATE_URL: Final = "http://{host}/commands/ir/ac/{extra}{status}"
 SEND_IR_COMMAND: Final = "http://{host}/commands/ir/localremote/{uuid}{command}{signal}"
 
 LOGGER = logging.getLogger(__name__)
+
+DEVICES = "devices"
+PROTOCOL = "protocol"
+
+PLATFORMS = ["sensor", "climate", "media_player", "light", "vacuum", "fan"]

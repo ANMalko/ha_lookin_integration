@@ -18,15 +18,9 @@ from homeassistant.components.climate.const import (
     SWING_BOTH,
     SWING_OFF,
 )
-from homeassistant.const import (
-    ATTR_TEMPERATURE,
-    CONF_HOST,
-    PRECISION_WHOLE,
-    TEMP_CELSIUS,
-)
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from .const import DOMAIN
+from .const import DEVICES, DOMAIN, PROTOCOL
 from .protocol import LookInHttpProtocol
 
 if TYPE_CHECKING:
@@ -36,11 +30,7 @@ if TYPE_CHECKING:
 
     from .models import Climate
 
-SUPPORT_FLAGS: int = (
-        SUPPORT_TARGET_TEMPERATURE |
-        SUPPORT_FAN_MODE |
-        SUPPORT_SWING_MODE
-)
+SUPPORT_FLAGS: int = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_SWING_MODE
 
 STATE_TO_HVAC_MODE: Dict[str, int] = {
     HVAC_MODE_OFF: 0,
@@ -48,20 +38,17 @@ STATE_TO_HVAC_MODE: Dict[str, int] = {
     HVAC_MODE_COOL: 2,
     HVAC_MODE_HEAT: 3,
     HVAC_MODE_DRY: 4,
-    HVAC_MODE_FAN_ONLY: 5
+    HVAC_MODE_FAN_ONLY: 5,
 }
 
 STATE_TO_FAN_MODE: Dict[str, int] = {
     FAN_AUTO: 0,
     FAN_LOW: 1,
     FAN_MIDDLE: 2,
-    FAN_HIGH: 3
+    FAN_HIGH: 3,
 }
 
-STATE_TO_SWING_MODE: Dict[str, int] = {
-    SWING_OFF: 0,
-    SWING_BOTH: 1
-}
+STATE_TO_SWING_MODE: Dict[str, int] = {SWING_OFF: 0, SWING_BOTH: 1}
 
 MIN_TEMP: Final = 16
 MAX_TEMP: Final = 30
@@ -73,23 +60,18 @@ async def async_setup_entry(
     config_entry: "ConfigEntry",
     async_add_entities: "AddEntitiesCallback",
 ) -> None:
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_protocol = LookInHttpProtocol(
-        host=config[CONF_HOST], session=async_get_clientsession(hass)
-    )
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    lookin_protocol = data[PROTOCOL]
+    devices = data[DEVICES]
 
     entities = []
 
-    for remote in await lookin_protocol.get_devices():
+    for remote in devices:
         if remote["Type"] == "EF":
             uuid = remote["UUID"]
             device = await lookin_protocol.get_conditioner(uuid)
             entities.append(
-                Conditioner(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device
-                )
+                Conditioner(uuid=uuid, lookin_protocol=lookin_protocol, device=device)
             )
 
     async_add_entities(entities)
@@ -105,14 +87,11 @@ class Conditioner(ClimateEntity):
         HVAC_MODE_COOL,
         HVAC_MODE_HEAT,
         HVAC_MODE_DRY,
-        HVAC_MODE_FAN_ONLY
+        HVAC_MODE_FAN_ONLY,
     ]
 
     def __init__(
-        self,
-        uuid: str,
-        lookin_protocol: "LookInHttpProtocol",
-        device: "Climate"
+        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Climate"
     ) -> None:
         self._uuid = uuid
         self._lookin_protocol = lookin_protocol
@@ -133,8 +112,7 @@ class Conditioner(ClimateEntity):
         self._device.hvac_mode = mode
 
         await self._lookin_protocol.update_conditioner(
-            extra=self._device.extra,
-            status=self._make_status()
+            extra=self._device.extra, status=self._make_status()
         )
 
     @property
@@ -170,8 +148,7 @@ class Conditioner(ClimateEntity):
         self._device.temperature = int(temperature - TEMP_OFFSET)
 
         await self._lookin_protocol.update_conditioner(
-            extra=self._device.extra,
-            status=self._make_status()
+            extra=self._device.extra, status=self._make_status()
         )
 
     @property
@@ -186,8 +163,7 @@ class Conditioner(ClimateEntity):
         self._device.fan_mode = mode
 
         await self._lookin_protocol.update_conditioner(
-            extra=self._device.extra,
-            status=self._make_status()
+            extra=self._device.extra, status=self._make_status()
         )
 
     @property
@@ -205,8 +181,7 @@ class Conditioner(ClimateEntity):
         self._device.swing_mode = mode
 
         await self._lookin_protocol.update_conditioner(
-            extra=self._device.extra,
-            status=self._make_status()
+            extra=self._device.extra, status=self._make_status()
         )
 
     @property
@@ -231,7 +206,9 @@ class Conditioner(ClimateEntity):
         return f"{i + TEMP_OFFSET:X}"[1]
 
     def _make_status(self) -> str:
-        return f"{self._device.hvac_mode}" \
-               f"{self._int_to_hex(self._device.temperature)}" \
-               f"{self._device.fan_mode}" \
-               f"{self._device.swing_mode}"
+        return (
+            f"{self._device.hvac_mode}"
+            f"{self._int_to_hex(self._device.temperature)}"
+            f"{self._device.fan_mode}"
+            f"{self._device.swing_mode}"
+        )

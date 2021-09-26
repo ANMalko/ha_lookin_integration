@@ -1,10 +1,8 @@
 from typing import TYPE_CHECKING, Any, Dict, Final, Optional
 
 from homeassistant.components.fan import SUPPORT_OSCILLATE, FanEntity
-from homeassistant.const import CONF_HOST
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from .const import DEVICES, DOMAIN, PROTOCOL
 from .protocol import LookInHttpProtocol
 
 if TYPE_CHECKING:
@@ -23,40 +21,31 @@ async def async_setup_entry(
     config_entry: "ConfigEntry",
     async_add_entities: "AddEntitiesCallback",
 ) -> None:
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_protocol = LookInHttpProtocol(
-        host=config[CONF_HOST], session=async_get_clientsession(hass)
-    )
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    lookin_protocol = data[PROTOCOL]
+    devices = data[DEVICES]
 
     entities = []
 
-    for remote in await lookin_protocol.get_devices():
+    for remote in devices:
         uuid = remote["UUID"]
         if remote["Type"] == "07":
             device = await lookin_protocol.get_remote(uuid)
             entities.append(
-                LookinFan(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device
-                )
+                LookinFan(uuid=uuid, lookin_protocol=lookin_protocol, device=device)
             )
         elif remote["Type"] == "04":
             device = await lookin_protocol.get_remote(uuid)
             entities.append(
                 LookinHumidifier(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device
+                    uuid=uuid, lookin_protocol=lookin_protocol, device=device
                 )
             )
         elif remote["Type"] == "05":
             device = await lookin_protocol.get_remote(uuid)
             entities.append(
                 LookinPurifier(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device
+                    uuid=uuid, lookin_protocol=lookin_protocol, device=device
                 )
             )
 
@@ -71,7 +60,7 @@ class LookinFanBase(FanEntity):
         uuid: str,
         lookin_protocol: "LookInHttpProtocol",
         device_class: str,
-        device: "Remote"
+        device: "Remote",
     ) -> None:
         self._uuid = uuid
         self._lookin_protocol = lookin_protocol
@@ -131,10 +120,7 @@ class LookinFanBase(FanEntity):
 
 class LookinFan(LookinFanBase):
     def __init__(
-            self,
-            uuid: str,
-            lookin_protocol: "LookInHttpProtocol",
-            device: "Remote"
+        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Remote"
     ) -> None:
         self._supported_features = FAN_SUPPORT_FLAGS
         self._oscillating: bool = False
@@ -142,7 +128,7 @@ class LookinFan(LookinFanBase):
             uuid=uuid,
             lookin_protocol=lookin_protocol,
             device_class="Fan",
-            device=device
+            device=device,
         )
 
     @property
@@ -164,16 +150,13 @@ class LookinFan(LookinFanBase):
 
 class LookinHumidifier(LookinFanBase):
     def __init__(
-            self,
-            uuid: str,
-            lookin_protocol: "LookInHttpProtocol",
-            device: "Remote"
+        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Remote"
     ) -> None:
         super().__init__(
             uuid=uuid,
             lookin_protocol=lookin_protocol,
             device_class="Humidifier",
-            device=device
+            device=device,
         )
 
     @property
@@ -183,16 +166,13 @@ class LookinHumidifier(LookinFanBase):
 
 class LookinPurifier(LookinFanBase):
     def __init__(
-            self,
-            uuid: str,
-            lookin_protocol: "LookInHttpProtocol",
-            device: "Remote"
+        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Remote"
     ) -> None:
         super().__init__(
             uuid=uuid,
             lookin_protocol=lookin_protocol,
             device_class="Purifier",
-            device=device
+            device=device,
         )
 
     @property

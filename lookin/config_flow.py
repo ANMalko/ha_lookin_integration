@@ -15,20 +15,17 @@ if TYPE_CHECKING:
 
     from .models import Device
 
-ADD_NEW_DEVICE_SCHEMA = vol.Schema(
-    {vol.Required(CONF_IP_ADDRESS): str}
-)
+ADD_NEW_DEVICE_SCHEMA = vol.Schema({vol.Required(CONF_IP_ADDRESS): str})
 
 
 class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
-
     def __init__(self) -> None:
         self._host: Optional[str] = None
         self._name: Optional[str] = None
         self._device_id: Optional[str] = None
 
     async def async_step_zeroconf(
-            self, discovery_info: DiscoveryInfoType
+        self, discovery_info: DiscoveryInfoType
     ) -> Optional["FlowResult"]:
         uid: str = discovery_info["hostname"][: -len(".local.")]
         self._host = discovery_info["host"]
@@ -90,16 +87,14 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: igno
                 return await self.async_step_device_name()
 
         return self.async_show_form(
-            step_id="user",
-            data_schema=ADD_NEW_DEVICE_SCHEMA,
-            errors=errors
+            step_id="user", data_schema=ADD_NEW_DEVICE_SCHEMA, errors=errors
         )
 
     async def _validate_device(self, host: str) -> "Device":
         lookin_protocol = LookInHttpProtocol(
             host=host, session=async_get_clientsession(self.hass)
         )
-        
+
         device = await lookin_protocol.get_info()
 
         if device.id in self._async_current_ids():
@@ -134,14 +129,12 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: igno
 
         return self.async_show_form(
             step_id="device_name",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_NAME, default=self._name): str}
-            ),
-            errors=errors
+            data_schema=vol.Schema({vol.Required(CONF_NAME, default=self._name): str}),
+            errors=errors,
         )
 
     async def async_step_discovery_confirm(
-            self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: Optional[Dict[str, Any]] = None
     ) -> "FlowResult":
         if user_input is None:
             return self.async_show_form(
@@ -161,7 +154,7 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: igno
         data = {
             CONF_NAME: self._name,
             CONF_HOST: self._host,
-            CONF_DEVICE_ID: self._device_id
+            CONF_DEVICE_ID: self._device_id,
         }
 
         return data

@@ -4,7 +4,7 @@ from homeassistant.components.light import COLOR_MODE_ONOFF, LightEntity
 from homeassistant.const import CONF_HOST
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from .const import DEVICES, DOMAIN, PROTOCOL
 from .protocol import LookInHttpProtocol
 
 if TYPE_CHECKING:
@@ -20,23 +20,18 @@ async def async_setup_entry(
     config_entry: "ConfigEntry",
     async_add_entities: "AddEntitiesCallback",
 ) -> None:
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_protocol = LookInHttpProtocol(
-        host=config[CONF_HOST], session=async_get_clientsession(hass)
-    )
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    lookin_protocol = data[PROTOCOL]
+    devices = data[DEVICES]
 
     entities = []
 
-    for remote in await lookin_protocol.get_devices():
+    for remote in devices:
         if remote["Type"] == "03":
             uuid = remote["UUID"]
             device = await lookin_protocol.get_remote(uuid)
             entities.append(
-                LookinLight(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device
-                )
+                LookinLight(uuid=uuid, lookin_protocol=lookin_protocol, device=device)
             )
 
     async_add_entities(entities, update_before_add=True)
@@ -49,10 +44,7 @@ class LookinLight(LightEntity):
     _attr_should_poll = False
 
     def __init__(
-        self,
-        uuid: str,
-        lookin_protocol: "LookInHttpProtocol",
-        device: "Remote"
+        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Remote"
     ) -> None:
         self._uuid = uuid
         self._lookin_protocol = lookin_protocol
