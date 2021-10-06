@@ -26,7 +26,7 @@ DEVICE_TO_CODE: Final = {
     "air_purifier": "5",
     "vacuum": "6",
     "fan": "7",
-    "climate_control": "EF"
+    "climate_control": "EF",
 }
 
 COMMAND_TO_CODE: Final = {
@@ -42,7 +42,7 @@ COMMAND_TO_CODE: Final = {
     "swing": "0A",
     "speed": "0B",
     "cursor": "0C",
-    "menu": "0D"
+    "menu": "0D",
 }
 
 
@@ -52,16 +52,13 @@ async def validate_response(response: "ClientResponse") -> None:
 
 
 class LookInHttpProtocol:
-
     def __init__(self, host: str, session: "ClientSession") -> None:
         self._host = host
         self._session = session
 
     async def get_info(self) -> Device:
         try:
-            response = await self._session.get(
-                url=INFO_URL.format(host=self._host)
-            )
+            response = await self._session.get(url=INFO_URL.format(host=self._host))
         except ClientError:
             raise DeviceNotFound
 
@@ -74,8 +71,7 @@ class LookInHttpProtocol:
     async def update_device_name(self, name: str) -> None:
         try:
             response = await self._session.post(
-                url=INFO_URL.format(host=self._host),
-                data=json.dumps({"name": name})
+                url=INFO_URL.format(host=self._host), data=json.dumps({"name": name})
             )
         except ClientError:
             raise DeviceNotFound

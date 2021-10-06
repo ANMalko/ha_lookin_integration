@@ -1,9 +1,13 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_NAME
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN, LOGGER
+from .const import DEVICES, DOMAIN, LOGGER, PLATFORMS, PROTOCOL
+from .error import DeviceNotFound
+from .protocol import LookInHttpProtocol  # TODO: move protocol into a PyPI package
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -19,26 +23,31 @@ async def async_setup_entry(hass: "HomeAssistant", entry: "ConfigEntry") -> bool
 
     LOGGER.warning("Lookin service entry.entry_id <%s>", entry.entry_id)
 
+    lookin_protocol = LookInHttpProtocol(
+        host=entry.data[CONF_HOST], session=async_get_clientsession(hass)
+    )
+
+    try:
+        devices = await lookin_protocol.get_devices()
+    except DeviceNotFound as ex:
+        raise ConfigEntryNotReady from ex
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         CONF_HOST: entry.data[CONF_HOST],
         CONF_DEVICE_ID: entry.data[CONF_DEVICE_ID],
-        CONF_NAME: entry.data[CONF_NAME]
+        CONF_NAME: entry.data[CONF_NAME],
+        DEVICES: devices,
+        PROTOCOL: lookin_protocol,
     }
 
-    hass.config_entries.async_setup_platforms(
-        entry, ["sensor", "climate", "media_player", "light", "vacuum", "fan"]
-    )
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
 
 
 class LookinSensor(Entity):
-
     def __init__(
-        self,
-        device_id: str,
-        device_name: str,
-        unit_of_measurement: str
+        self, device_id: str, device_name: str, unit_of_measurement: str
     ) -> None:
         self.current_value: Optional[Any] = None
         self._device_id = device_id
@@ -75,9 +84,7 @@ class LookinSensor(Entity):
     @property
     def device_info(self) -> Dict[str, Any]:
         return {
-            "identifiers": {
-                (DOMAIN, self.device_id)
-            },
+            "identifiers": {(DOMAIN, self.device_id)},
             "name": "LOOK.in climate sensor",
             "manufacturer": "LOOK.in",
             "model": "Remote",

@@ -9,10 +9,9 @@ from homeassistant.components.media_player.const import (
     SUPPORT_VOLUME_MUTE,
     SUPPORT_VOLUME_STEP,
 )
-from homeassistant.const import CONF_HOST, STATE_PLAYING
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.const import STATE_PLAYING
 
-from .const import DOMAIN
+from .const import DEVICES, DOMAIN, PROTOCOL
 from .protocol import LookInHttpProtocol
 
 if TYPE_CHECKING:
@@ -28,14 +27,13 @@ async def async_setup_entry(
     config_entry: "ConfigEntry",
     async_add_entities: "AddEntitiesCallback",
 ) -> None:
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_protocol = LookInHttpProtocol(
-        host=config[CONF_HOST], session=async_get_clientsession(hass)
-    )
+    data = hass.data[DOMAIN][config_entry.entry_id]
+    lookin_protocol = data[PROTOCOL]
+    devices = data[DEVICES]
 
     entities = []
 
-    for remote in await lookin_protocol.get_devices():
+    for remote in devices:
         if remote["Type"] in ("01", "02"):
             uuid = remote["UUID"]
             device = await lookin_protocol.get_remote(uuid)
@@ -45,7 +43,7 @@ async def async_setup_entry(
                     uuid=uuid,
                     lookin_protocol=lookin_protocol,
                     device_class=device_class,
-                    device=device
+                    device=device,
                 )
             )
 
@@ -60,7 +58,7 @@ class LookinMedia(MediaPlayerEntity):
         uuid: str,
         lookin_protocol: "LookInHttpProtocol",
         device_class: str,
-        device: "Remote"
+        device: "Remote",
     ) -> None:
         self._uuid = uuid
         self._lookin_protocol = lookin_protocol
@@ -73,7 +71,9 @@ class LookinMedia(MediaPlayerEntity):
 
         for function in self._device.functions:
             if function.name == "power":
-                self._supported_features = self._supported_features | SUPPORT_TURN_ON | SUPPORT_TURN_OFF
+                self._supported_features = (
+                    self._supported_features | SUPPORT_TURN_ON | SUPPORT_TURN_OFF
+                )
                 self._power_on_command = "power"
                 self._power_off_command = "power"
             elif function.name == "poweron":
@@ -83,17 +83,23 @@ class LookinMedia(MediaPlayerEntity):
                 self._supported_features = self._supported_features | SUPPORT_TURN_OFF
                 self._power_off_command = "poweroff"
             elif function.name == "mute":
-                self._supported_features = self._supported_features | SUPPORT_VOLUME_MUTE
+                self._supported_features = (
+                    self._supported_features | SUPPORT_VOLUME_MUTE
+                )
             elif function.name == "volup":
-                self._supported_features = self._supported_features | SUPPORT_VOLUME_STEP
+                self._supported_features = (
+                    self._supported_features | SUPPORT_VOLUME_STEP
+                )
             elif function.name == "chup":
                 self._supported_features = self._supported_features | SUPPORT_NEXT_TRACK
             elif function.name == "chdown":
-                self._supported_features = self._supported_features | SUPPORT_PREVIOUS_TRACK
+                self._supported_features = (
+                    self._supported_features | SUPPORT_PREVIOUS_TRACK
+                )
 
     @property
     def state(self) -> str:
-         return self._state
+        return self._state
 
     @property
     def name(self) -> str:
