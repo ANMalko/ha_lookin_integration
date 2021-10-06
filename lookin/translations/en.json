@@ -5,19 +5,19 @@
         "data": {
           "ip_address": "controller IP address"
         },
-        "description": "LOOK.in controller IP address",
-        "title": "LOOK.in controller"
+        "description": "LOOKin controller IP address",
+        "title": "LOOKin controller"
       },
       "device_name": {
         "data": {
           "name": "Enter device name"
         },
         "description": "Enter name for device or it location",
-        "title": "LOOK.in device name"
+        "title": "LOOKin device name"
       },
       "discovery_confirm": {
-        "description": "Do you want to add LOOK.in (`{name}`) to Home Assistant?",
-        "title": "Confirm adding LOOK.in"
+        "description": "Do you want to add LOOKin (`{name}`) to Home Assistant?",
+        "title": "Confirm adding LOOKin"
       }
     },
     "error": {
@@ -31,7 +31,7 @@
       "already_configured": "Device is already configured",
       "no_usable_service": "A device was found but could not a connection to it.",
       "already_in_progress": "Configuration flow is already in progress",
-      "no_uid": "LOOK.in instance does not have a unique id. You can configure the integration manually.",
+      "no_uid": "LOOKin instance does not have a unique id. You can configure the integration manually.",
       "unknown": "Unexpected error"
     }
   }

@@ -1,6 +1,6 @@
 {
   "domain": "lookin",
-  "name": "LOOK.in",
+  "name": "LOOKin",
   "documentation": "https://www.home-assistant.io/integrations/",
   "codeowners": [],
   "zeroconf": ["_lookin._tcp.local."],

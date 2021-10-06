@@ -85,8 +85,8 @@ class LookinSensor(Entity):
     def device_info(self) -> Dict[str, Any]:
         return {
             "identifiers": {(DOMAIN, self.device_id)},
-            "name": "LOOK.in climate sensor",
-            "manufacturer": "LOOK.in",
+            "name": "LOOKin climate sensor",
+            "manufacturer": "LOOKin",
             "model": "Remote",
             "sw_version": self._firmware,
             "via_device": (DOMAIN, self._device_id),
