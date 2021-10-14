@@ -1,6 +1,7 @@
 """The lookin integration config_flow."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -11,12 +12,11 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import DiscoveryInfoType
 
-from .const import DOMAIN, LOGGER
-from .error import DeviceNotFound, NoUsableService
-from .models import Device
-from .protocol import LookInHttpProtocol
+from .aiolookin import Device, DeviceNotFound, LookInHttpProtocol, NoUsableService
+from .const import DOMAIN
 
 ADD_NEW_DEVICE_SCHEMA = vol.Schema({vol.Required(CONF_IP_ADDRESS): str})
+LOGGER = logging.getLogger(__name__)
 
 
 class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):

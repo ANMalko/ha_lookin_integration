@@ -8,10 +8,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import LookinPowerEntity
-from .const import DEVICES, DOMAIN, LOOKIN_DEVICE, PROTOCOL
-from .models import Device, Remote
-from .protocol import LookInHttpProtocol
+from .aiolookin import Remote
+from .const import DOMAIN
+from .entity import LookinPowerEntity
+from .models import LookinData
 
 FAN_SUPPORT_FLAGS: Final = SUPPORT_OSCILLATE
 
@@ -21,11 +21,7 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_device = data[LOOKIN_DEVICE]
-    lookin_protocol = data[PROTOCOL]
-    devices = data[DEVICES]
-
+    lookin_data: LookinData = hass.data[DOMAIN][config_entry.entry_id]
     entities = []
 
     _type_class_map = {
@@ -33,18 +29,12 @@ async def async_setup_entry(
         "05": LookinPurifier,
         "07": LookinFan,
     }
-    for remote in devices:
+    for remote in lookin_data.devices:
+        if not (cls := _type_class_map.get(remote["Type"])):
+            continue
         uuid = remote["UUID"]
-        if cls := _type_class_map.get(remote["Type"]):
-            device = await lookin_protocol.get_remote(uuid)
-            entities.append(
-                cls(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device,
-                    lookin_device=lookin_device,
-                )
-            )
+        device = await lookin_data.lookin_protocol.get_remote(uuid)
+        entities.append(cls(uuid=uuid, device=device, lookin_data=lookin_data))
 
     async_add_entities(entities)
 
@@ -55,13 +45,10 @@ class LookinFanBase(LookinPowerEntity, FanEntity):
     def __init__(
         self,
         uuid: str,
-        lookin_protocol: LookInHttpProtocol,
-        device_class: str,
         device: Remote,
-        lookin_device: Device,
+        lookin_data: LookinData,
     ) -> None:
-        super().__init__(uuid, lookin_protocol, device, lookin_device)
-        self._device_class = device_class
+        super().__init__(uuid, device, lookin_data)
         self._attr_is_on = False
 
     async def async_turn_on(
@@ -86,22 +73,17 @@ class LookinFanBase(LookinPowerEntity, FanEntity):
 
 
 class LookinFan(LookinFanBase):
+    """A lookin fan."""
+
     def __init__(
         self,
         uuid: str,
-        lookin_protocol: LookInHttpProtocol,
         device: Remote,
-        lookin_device: Device,
+        lookin_data: LookinData,
     ) -> None:
+        super().__init__(uuid, device, lookin_data)
         self._supported_features = FAN_SUPPORT_FLAGS
         self._oscillating: bool = False
-        super().__init__(
-            uuid=uuid,
-            lookin_protocol=lookin_protocol,
-            device_class="Fan",
-            device=device,
-            lookin_device=lookin_device,
-        )
 
     @property
     def supported_features(self) -> int:
@@ -121,20 +103,7 @@ class LookinFan(LookinFanBase):
 
 
 class LookinHumidifier(LookinFanBase):
-    def __init__(
-        self,
-        uuid: str,
-        lookin_protocol: LookInHttpProtocol,
-        device: Remote,
-        lookin_device: Device,
-    ) -> None:
-        super().__init__(
-            uuid=uuid,
-            lookin_protocol=lookin_protocol,
-            device_class="Humidifier",
-            device=device,
-            lookin_device=lookin_device,
-        )
+    """A lookin humidifer."""
 
     @property
     def icon(self) -> str:
@@ -142,20 +111,7 @@ class LookinHumidifier(LookinFanBase):
 
 
 class LookinPurifier(LookinFanBase):
-    def __init__(
-        self,
-        uuid: str,
-        lookin_protocol: LookInHttpProtocol,
-        device: Remote,
-        lookin_device: Device,
-    ) -> None:
-        super().__init__(
-            uuid=uuid,
-            lookin_protocol=lookin_protocol,
-            device_class="Purifier",
-            device=device,
-            lookin_device=lookin_device,
-        )
+    """A lookin air purifier."""
 
     @property
     def icon(self) -> str:

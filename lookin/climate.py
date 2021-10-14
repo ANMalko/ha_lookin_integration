@@ -1,6 +1,8 @@
 """The lookin integration climate platform."""
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import Any, Final, cast
 
 from homeassistant.components.climate import ClimateEntity
@@ -23,13 +25,13 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import LookinEntity
-from .const import DEVICES, DOMAIN, LOOKIN_DEVICE, PROTOCOL
-from .models import Climate, Device
-from .protocol import LookInHttpProtocol
+from .aiolookin import Climate
+from .const import DOMAIN
+from .entity import LookinEntity
+from .models import LookinData
 
 SUPPORT_FLAGS: int = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_SWING_MODE
 
@@ -54,6 +56,7 @@ STATE_TO_SWING_MODE: dict[str, int] = {SWING_OFF: 0, SWING_BOTH: 1}
 MIN_TEMP: Final = 16
 MAX_TEMP: Final = 30
 TEMP_OFFSET: Final = 16
+LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -61,25 +64,21 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_device = data[LOOKIN_DEVICE]
-    lookin_protocol = data[PROTOCOL]
-    devices = data[DEVICES]
-
+    lookin_data: LookinData = hass.data[DOMAIN][config_entry.entry_id]
     entities = []
 
-    for remote in devices:
-        if remote["Type"] == "EF":
-            uuid = remote["UUID"]
-            device = await lookin_protocol.get_conditioner(uuid)
-            entities.append(
-                ConditionerEntity(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device=device,
-                    lookin_device=lookin_device,
-                )
+    for remote in lookin_data.devices:
+        if remote["Type"] != "EF":
+            continue
+        uuid = remote["UUID"]
+        device = await lookin_data.lookin_protocol.get_conditioner(uuid)
+        entities.append(
+            ConditionerEntity(
+                uuid=uuid,
+                device=device,
+                lookin_data=lookin_data,
             )
+        )
 
     async_add_entities(entities)
 
@@ -100,15 +99,15 @@ class ConditionerEntity(LookinEntity, ClimateEntity):
     def __init__(
         self,
         uuid: str,
-        lookin_protocol: LookInHttpProtocol,
         device: Climate,
-        lookin_device: Device,
+        lookin_data: LookinData,
     ) -> None:
-        super().__init__(uuid, lookin_protocol, device, lookin_device)
+        super().__init__(uuid, device, lookin_data)
         self._attr_temperature_unit = TEMP_CELSIUS
         self._attr_min_temp = MIN_TEMP
         self._attr_max_temp = MAX_TEMP
         self._attr_target_temperature_step = PRECISION_WHOLE
+        self._update_lock = asyncio.Lock()
 
     @property
     def _climate(self):
@@ -145,9 +144,8 @@ class ConditionerEntity(LookinEntity, ClimateEntity):
         return self._attr_hvac_modes[self._climate.hvac_mode]
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        temperature = kwargs.get(ATTR_TEMPERATURE)
-
-        if temperature is None:
+        """Set the async_set_temperature of the device."""
+        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
 
         self._climate.temperature = int(temperature - TEMP_OFFSET)
@@ -157,7 +155,7 @@ class ConditionerEntity(LookinEntity, ClimateEntity):
         )
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
-
+        """Set the fan mode of the device."""
         if (mode := STATE_TO_FAN_MODE.get(fan_mode)) is None:
             return
 
@@ -168,6 +166,7 @@ class ConditionerEntity(LookinEntity, ClimateEntity):
         )
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
+        """Set the swing mode of the device."""
         if (mode := STATE_TO_SWING_MODE.get(swing_mode)) is None:
             return
 
@@ -178,7 +177,8 @@ class ConditionerEntity(LookinEntity, ClimateEntity):
         )
 
     async def async_update(self) -> None:
-        self._device = await self._lookin_protocol.get_conditioner(self._uuid)
+        """Update the state of the entity."""
+        await self._async_update_from_device()
 
     @staticmethod
     def _int_to_hex(i: int) -> str:
@@ -191,3 +191,29 @@ class ConditionerEntity(LookinEntity, ClimateEntity):
             f"{self._climate.fan_mode}"
             f"{self._climate.swing_mode}"
         )
+
+    async def _async_update_from_device(self):
+        """Update the state from the lookin device."""
+        async with self._update_lock:
+            self._device = await self._lookin_protocol.get_conditioner(self._uuid)
+
+    async def _async_update_from_ir(self):
+        """Called when an ir signal is received by the device."""
+        await self._async_update_from_device()
+        self.async_write_ha_state()
+
+    @callback
+    def _async_push_update(self, msg):
+        """Process an update pushed via UDP."""
+        if msg["sensor_id"] == "87":
+            LOGGER.debug("Saw IR signal message: %s, triggering update", msg)
+            self.hass.async_create_task(self._async_update_from_ir())
+
+    async def async_added_to_hass(self) -> None:
+        """Called when the entity is added to hass."""
+        self.async_on_remove(
+            self._lookin_udp_subs.subscribe(
+                self._lookin_device.id, self._async_push_update
+            )
+        )
+        return await super().async_added_to_hass()
