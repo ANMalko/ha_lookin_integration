@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Dict
+"""The lookin integration light platform."""
+from __future__ import annotations
 
 from homeassistant.components.media_player import MediaPlayerEntity
 from homeassistant.components.media_player.const import (
@@ -9,25 +10,24 @@ from homeassistant.components.media_player.const import (
     SUPPORT_VOLUME_MUTE,
     SUPPORT_VOLUME_STEP,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_PLAYING
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEVICES, DOMAIN, PROTOCOL
+from . import LookinPowerEntity
+from .const import DEVICES, DOMAIN, LOOKIN_DEVICE, PROTOCOL
+from .models import Device, Remote
 from .protocol import LookInHttpProtocol
-
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-    from .models import Remote
 
 
 async def async_setup_entry(
-    hass: "HomeAssistant",
-    config_entry: "ConfigEntry",
-    async_add_entities: "AddEntitiesCallback",
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     data = hass.data[DOMAIN][config_entry.entry_id]
+    lookin_device = data[LOOKIN_DEVICE]
     lookin_protocol = data[PROTOCOL]
     devices = data[DEVICES]
 
@@ -44,29 +44,27 @@ async def async_setup_entry(
                     lookin_protocol=lookin_protocol,
                     device_class=device_class,
                     device=device,
+                    lookin_device=lookin_device,
                 )
             )
 
     async_add_entities(entities, update_before_add=True)
 
 
-class LookinMedia(MediaPlayerEntity):
+class LookinMedia(LookinPowerEntity, MediaPlayerEntity):
     _attr_should_poll = False
 
     def __init__(
         self,
         uuid: str,
-        lookin_protocol: "LookInHttpProtocol",
+        lookin_protocol: LookInHttpProtocol,
         device_class: str,
-        device: "Remote",
+        device: Remote,
+        lookin_device: Device,
     ) -> None:
-        self._uuid = uuid
-        self._lookin_protocol = lookin_protocol
-        self._device = device
+        super().__init__(uuid, lookin_protocol, device, lookin_device)
         self._device_class = device_class
         self._supported_features: int = 0
-        self._power_on_command: str = "power"
-        self._power_off_command: str = "power"
         self._state: str = STATE_PLAYING
 
         for function in self._device.functions:
@@ -74,14 +72,10 @@ class LookinMedia(MediaPlayerEntity):
                 self._supported_features = (
                     self._supported_features | SUPPORT_TURN_ON | SUPPORT_TURN_OFF
                 )
-                self._power_on_command = "power"
-                self._power_off_command = "power"
             elif function.name == "poweron":
                 self._supported_features = self._supported_features | SUPPORT_TURN_ON
-                self._power_on_command = "poweron"
             elif function.name == "poweroff":
                 self._supported_features = self._supported_features | SUPPORT_TURN_OFF
-                self._power_off_command = "poweroff"
             elif function.name == "mute":
                 self._supported_features = (
                     self._supported_features | SUPPORT_VOLUME_MUTE
@@ -102,16 +96,8 @@ class LookinMedia(MediaPlayerEntity):
         return self._state
 
     @property
-    def name(self) -> str:
-        return self._device.name
-
-    @property
     def device_class(self) -> str:
         return self._device_class
-
-    @property
-    def unique_id(self) -> str:
-        return self._uuid
 
     @property
     def supported_features(self) -> int:
@@ -151,12 +137,3 @@ class LookinMedia(MediaPlayerEntity):
         await self._lookin_protocol.send_command(
             uuid=self._uuid, command=self._power_on_command, signal="FF"
         )
-
-    @property
-    def device_info(self) -> Dict[str, Any]:
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._device_class,
-            "model": "Unavailable",
-            "manufacturer": "Unavailable",
-        }

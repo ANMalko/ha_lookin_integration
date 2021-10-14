@@ -1,6 +1,9 @@
+"""The lookin integration protocol --- TODO: Make this a PyPi."""
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Dict, Final, List
+from typing import TYPE_CHECKING, Any, Final
 
 from aiohttp import ClientError
 
@@ -46,13 +49,13 @@ COMMAND_TO_CODE: Final = {
 }
 
 
-async def validate_response(response: "ClientResponse") -> None:
+async def validate_response(response: ClientResponse) -> None:
     if response.status not in (200, 201, 204):
         raise NoUsableService
 
 
 class LookInHttpProtocol:
-    def __init__(self, host: str, session: "ClientSession") -> None:
+    def __init__(self, host: str, session: ClientSession) -> None:
         self._host = host
         self._session = session
 
@@ -93,7 +96,7 @@ class LookInHttpProtocol:
 
         return MeteoSensor(_data=payload)
 
-    async def get_devices(self) -> List[Dict[str, Any]]:
+    async def get_devices(self) -> list[dict[str, Any]]:
         try:
             response = await self._session.get(
                 url=DEVICES_INFO_URL.format(host=self._host)
@@ -107,7 +110,7 @@ class LookInHttpProtocol:
 
         return payload
 
-    async def get_device(self, uuid: str) -> Dict[str, Any]:
+    async def get_device(self, uuid: str) -> dict[str, Any]:
         try:
             response = await self._session.get(
                 url=DEVICE_INFO_URL.format(host=self._host, uuid=uuid)

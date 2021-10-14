@@ -1,4 +1,7 @@
-from typing import TYPE_CHECKING, Any, Dict
+"""The lookin integration vacuum platform."""
+from __future__ import annotations
+
+from typing import Any
 
 from homeassistant.components.vacuum import (
     SERVICE_START,
@@ -7,28 +10,26 @@ from homeassistant.components.vacuum import (
     SUPPORT_TURN_ON,
     VacuumEntity,
 )
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEVICES, DOMAIN, PROTOCOL
+from . import LookinPowerEntity
+from .const import DEVICES, DOMAIN, LOOKIN_DEVICE, PROTOCOL
+from .models import Device, Remote
 from .protocol import LookInHttpProtocol
-
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-    from .models import Remote
-
 
 SUPPORT_FLAGS: int = SUPPORT_TURN_ON | SUPPORT_TURN_OFF
 
 
 async def async_setup_entry(
-    hass: "HomeAssistant",
-    config_entry: "ConfigEntry",
-    async_add_entities: "AddEntitiesCallback",
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     data = hass.data[DOMAIN][config_entry.entry_id]
     lookin_protocol = data[PROTOCOL]
+    lookin_device = data[LOOKIN_DEVICE]
     devices = data[DEVICES]
 
     entities = []
@@ -38,47 +39,31 @@ async def async_setup_entry(
             uuid = remote["UUID"]
             device = await lookin_protocol.get_remote(uuid)
             entities.append(
-                LookinVacuum(uuid=uuid, lookin_protocol=lookin_protocol, device=device)
+                LookinVacuum(
+                    uuid=uuid,
+                    lookin_protocol=lookin_protocol,
+                    device=device,
+                    lookin_device=lookin_device,
+                )
             )
 
     async_add_entities(entities, update_before_add=True)
 
 
-class LookinVacuum(VacuumEntity):
+class LookinVacuum(LookinPowerEntity, VacuumEntity):
     _attr_should_poll = False
+    _attr_supported_features = SUPPORT_FLAGS
+    _attr_assumed_state = True
 
     def __init__(
-        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Remote"
+        self,
+        uuid: str,
+        lookin_protocol: LookInHttpProtocol,
+        device: Remote,
+        lookin_device: Device,
     ) -> None:
-        self._uuid = uuid
-        self._lookin_protocol = lookin_protocol
-        self._device = device
-        self._device_class = "Vacuum"
-
-        self._power_on_command: str = "power"
-        self._power_off_command: str = "power"
-
-        self._attr_unique_id = uuid
-        self._is_on = False
+        super().__init__(uuid, lookin_protocol, device, lookin_device)
         self._status = SERVICE_STOP
-        self._supported_features = SUPPORT_FLAGS
-
-        for function in self._device.functions:
-            if function.name == "power":
-                self._power_on_command = "power"
-                self._power_off_command = "power"
-            elif function.name == "poweron":
-                self._power_on_command = "poweron"
-            elif function.name == "poweroff":
-                self._power_off_command = "poweroff"
-
-    @property
-    def name(self) -> str:
-        return self._device.name
-
-    @property
-    def supported_features(self) -> int:
-        return self._supported_features
 
     @property
     def is_on(self) -> bool:
@@ -101,13 +86,3 @@ class LookinVacuum(VacuumEntity):
         )
         self._status = SERVICE_STOP
         self.async_write_ha_state()
-
-    @property
-    def device_info(self) -> Dict[str, Any]:
-        """Get attributes about the device."""
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._device_class,
-            "model": "Unavailable",
-            "manufacturer": "Unavailable",
-        }

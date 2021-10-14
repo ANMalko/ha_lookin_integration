@@ -1,3 +1,6 @@
+"""The lookin integration constants."""
+from __future__ import annotations
+
 import logging
 from typing import Final
 
@@ -12,7 +15,14 @@ SEND_IR_COMMAND: Final = "http://{host}/commands/ir/localremote/{uuid}{command}{
 
 LOGGER = logging.getLogger(__name__)
 
-DEVICES = "devices"
-PROTOCOL = "protocol"
+DEVICES: Final = "devices"
+LOOKIN_DEVICE: Final = "lookin_device"
+PROTOCOL: Final = "protocol"
+METEO_COORDINATOR: Final = "meteo_coordinator"
 
-PLATFORMS = ["sensor", "climate", "media_player", "light", "vacuum", "fan"]
+PLATFORMS: Final = ["sensor", "climate", "media_player", "light", "vacuum", "fan"]
+
+
+POWER_CMD: Final = "power"
+POWER_ON_CMD: Final = "power_on"
+POWER_OFF_CMD: Final = "power_off"
