@@ -1,6 +1,11 @@
-from typing import TYPE_CHECKING, Any, Dict
+"""The lookin integration light platform."""
+from __future__ import annotations
 
-from homeassistant.components.media_player import MediaPlayerEntity
+from homeassistant.components.media_player import (
+    DEVICE_CLASS_RECEIVER,
+    DEVICE_CLASS_TV,
+    MediaPlayerEntity,
+)
 from homeassistant.components.media_player.const import (
     SUPPORT_NEXT_TRACK,
     SUPPORT_PREVIOUS_TRACK,
@@ -9,113 +14,78 @@ from homeassistant.components.media_player.const import (
     SUPPORT_VOLUME_MUTE,
     SUPPORT_VOLUME_STEP,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_PLAYING
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEVICES, DOMAIN, PROTOCOL
-from .protocol import LookInHttpProtocol
+from .aiolookin import Remote
+from .const import DOMAIN
+from .entity import LookinPowerEntity
+from .models import LookinData
 
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-    from .models import Remote
+_TYPE_TO_DEVICE_CLASS = {"01": DEVICE_CLASS_TV, "02": DEVICE_CLASS_RECEIVER}
 
 
 async def async_setup_entry(
-    hass: "HomeAssistant",
-    config_entry: "ConfigEntry",
-    async_add_entities: "AddEntitiesCallback",
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_protocol = data[PROTOCOL]
-    devices = data[DEVICES]
+    lookin_data: LookinData = hass.data[DOMAIN][config_entry.entry_id]
 
     entities = []
 
-    for remote in devices:
-        if remote["Type"] in ("01", "02"):
-            uuid = remote["UUID"]
-            device = await lookin_protocol.get_remote(uuid)
-            device_class = "tv" if remote["Type"] == "01" else "media"
-            entities.append(
-                LookinMedia(
-                    uuid=uuid,
-                    lookin_protocol=lookin_protocol,
-                    device_class=device_class,
-                    device=device,
-                )
+    for remote in lookin_data.devices:
+        if remote["Type"] not in _TYPE_TO_DEVICE_CLASS:
+            continue
+        uuid = remote["UUID"]
+        device = await lookin_data.lookin_protocol.get_remote(uuid)
+        entities.append(
+            LookinMedia(
+                uuid=uuid,
+                device=device,
+                lookin_data=lookin_data,
+                device_class=_TYPE_TO_DEVICE_CLASS[remote["Type"]],
             )
+        )
 
     async_add_entities(entities, update_before_add=True)
 
 
-class LookinMedia(MediaPlayerEntity):
+class LookinMedia(LookinPowerEntity, MediaPlayerEntity):
     _attr_should_poll = False
 
     def __init__(
         self,
         uuid: str,
-        lookin_protocol: "LookInHttpProtocol",
+        device: Remote,
+        lookin_data: LookinData,
         device_class: str,
-        device: "Remote",
     ) -> None:
-        self._uuid = uuid
-        self._lookin_protocol = lookin_protocol
-        self._device = device
-        self._device_class = device_class
+        super().__init__(uuid, device, lookin_data)
+        self._attr_device_class = device_class
         self._supported_features: int = 0
-        self._power_on_command: str = "power"
-        self._power_off_command: str = "power"
         self._state: str = STATE_PLAYING
-
         for function in self._device.functions:
             if function.name == "power":
-                self._supported_features = (
-                    self._supported_features | SUPPORT_TURN_ON | SUPPORT_TURN_OFF
-                )
-                self._power_on_command = "power"
-                self._power_off_command = "power"
+                self._attr_supported_features |= SUPPORT_TURN_OFF
             elif function.name == "poweron":
-                self._supported_features = self._supported_features | SUPPORT_TURN_ON
-                self._power_on_command = "poweron"
+                self._attr_supported_features |= SUPPORT_TURN_ON
             elif function.name == "poweroff":
-                self._supported_features = self._supported_features | SUPPORT_TURN_OFF
-                self._power_off_command = "poweroff"
+                self._attr_supported_features |= SUPPORT_TURN_OFF
             elif function.name == "mute":
-                self._supported_features = (
-                    self._supported_features | SUPPORT_VOLUME_MUTE
-                )
+                self._attr_supported_features |= SUPPORT_VOLUME_MUTE
             elif function.name == "volup":
-                self._supported_features = (
-                    self._supported_features | SUPPORT_VOLUME_STEP
-                )
+                self._attr_supported_features |= SUPPORT_VOLUME_STEP
             elif function.name == "chup":
-                self._supported_features = self._supported_features | SUPPORT_NEXT_TRACK
+                self._attr_supported_features |= SUPPORT_NEXT_TRACK
             elif function.name == "chdown":
-                self._supported_features = (
-                    self._supported_features | SUPPORT_PREVIOUS_TRACK
-                )
+                self._attr_supported_features |= SUPPORT_PREVIOUS_TRACK
 
     @property
     def state(self) -> str:
         return self._state
-
-    @property
-    def name(self) -> str:
-        return self._device.name
-
-    @property
-    def device_class(self) -> str:
-        return self._device_class
-
-    @property
-    def unique_id(self) -> str:
-        return self._uuid
-
-    @property
-    def supported_features(self) -> int:
-        return self._supported_features
 
     async def async_volume_up(self) -> None:
         await self._lookin_protocol.send_command(
@@ -151,12 +121,3 @@ class LookinMedia(MediaPlayerEntity):
         await self._lookin_protocol.send_command(
             uuid=self._uuid, command=self._power_on_command, signal="FF"
         )
-
-    @property
-    def device_info(self) -> Dict[str, Any]:
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._device_class,
-            "model": "Unavailable",
-            "manufacturer": "Unavailable",
-        }

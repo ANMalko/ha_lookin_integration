@@ -1,99 +1,72 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional
+"""The lookin integration light platform."""
+from __future__ import annotations
+
+from typing import Any
 
 from homeassistant.components.light import COLOR_MODE_ONOFF, LightEntity
-from homeassistant.const import CONF_HOST
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEVICES, DOMAIN, PROTOCOL
-from .protocol import LookInHttpProtocol
-
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-    from .models import Remote
+from .aiolookin import Remote
+from .const import DOMAIN
+from .entity import LookinPowerEntity
+from .models import LookinData
 
 
 async def async_setup_entry(
-    hass: "HomeAssistant",
-    config_entry: "ConfigEntry",
-    async_add_entities: "AddEntitiesCallback",
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][config_entry.entry_id]
-    lookin_protocol = data[PROTOCOL]
-    devices = data[DEVICES]
-
+    lookin_data: LookinData = hass.data[DOMAIN][config_entry.entry_id]
     entities = []
 
-    for remote in devices:
-        if remote["Type"] == "03":
-            uuid = remote["UUID"]
-            device = await lookin_protocol.get_remote(uuid)
-            entities.append(
-                LookinLight(uuid=uuid, lookin_protocol=lookin_protocol, device=device)
+    for remote in lookin_data.devices:
+        if remote["Type"] != "03":
+            continue
+        uuid = remote["UUID"]
+        device = await lookin_data.lookin_protocol.get_remote(uuid)
+        entities.append(
+            LookinLightEntity(
+                uuid=uuid,
+                device=device,
+                lookin_data=lookin_data,
             )
+        )
 
     async_add_entities(entities, update_before_add=True)
 
 
-class LookinLight(LightEntity):
+class LookinLightEntity(LookinPowerEntity, LightEntity):
 
-    _attr_supported_color_modes = [COLOR_MODE_ONOFF]
+    _attr_supported_color_modes = {COLOR_MODE_ONOFF}
     _attr_color_mode = COLOR_MODE_ONOFF
+    _attr_assumed_state = True
     _attr_should_poll = False
 
     def __init__(
-        self, uuid: str, lookin_protocol: "LookInHttpProtocol", device: "Remote"
+        self,
+        uuid: str,
+        device: Remote,
+        lookin_data: LookinData,
     ) -> None:
-        self._uuid = uuid
-        self._lookin_protocol = lookin_protocol
-        self._device = device
-        self._device_class = "Light"
-
-        self._power_on_command: str = "power"
-        self._power_off_command: str = "power"
-
-        self._attr_unique_id = uuid
-
-        self._is_on = False
-
-        for function in self._device.functions:
-            if function.name == "power":
-                self._power_on_command = "power"
-                self._power_off_command = "power"
-            elif function.name == "poweron":
-                self._power_on_command = "poweron"
-            elif function.name == "poweroff":
-                self._power_off_command = "poweroff"
-
-    @property
-    def name(self) -> str:
-        return self._device.name
-
-    @property
-    def is_on(self) -> bool:
-        return self._is_on
+        """Init the light."""
+        super().__init__(uuid, device, lookin_data)
+        self._attr_is_on = False
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn on the light."""
         await self._lookin_protocol.send_command(
             uuid=self._uuid, command=self._power_on_command, signal="FF"
         )
-        self._is_on = True
+        self._attr_is_on = True
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn off the light."""
         await self._lookin_protocol.send_command(
             uuid=self._uuid, command=self._power_off_command, signal="FF"
         )
-        self._is_on = False
+        self._attr_is_on = False
         self.async_write_ha_state()
-
-    @property
-    def device_info(self) -> Dict[str, Any]:
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._device_class,
-            "model": "Unavailable",
-            "manufacturer": "Unavailable",
-        }

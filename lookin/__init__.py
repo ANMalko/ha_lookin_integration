@@ -1,93 +1,68 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional
+"""The lookin integration."""
+from __future__ import annotations
 
-from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_NAME
+from datetime import timedelta
+import logging
+
+import aiohttp
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DEVICES, DOMAIN, LOGGER, PLATFORMS, PROTOCOL
-from .error import DeviceNotFound
-from .protocol import LookInHttpProtocol  # TODO: move protocol into a PyPI package
+from .aiolookin import LookInHttpProtocol, LookinUDPSubscriptions, start_lookin_udp
+from .const import DOMAIN, PLATFORMS
+from .models import LookinData
 
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
+LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: "HomeAssistant", entry: "ConfigEntry") -> bool:
-    LOGGER.warning("Lookin service started")
-    LOGGER.warning("config_entry.data - <%s>", entry.data)
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up lookin from a config entry."""
 
-    LOGGER.warning("Lookin service CONF_DEVICE_ID <%s>", entry.data[CONF_DEVICE_ID])
-    LOGGER.warning("Lookin service CONF_HOST <%s>", entry.data[CONF_HOST])
-
-    LOGGER.warning("Lookin service entry.entry_id <%s>", entry.entry_id)
-
+    host = entry.data[CONF_HOST]
     lookin_protocol = LookInHttpProtocol(
-        host=entry.data[CONF_HOST], session=async_get_clientsession(hass)
+        host=host, session=async_get_clientsession(hass)
     )
 
     try:
+        lookin_device = await lookin_protocol.get_info()
         devices = await lookin_protocol.get_devices()
-    except DeviceNotFound as ex:
+    except aiohttp.ClientError as ex:
         raise ConfigEntryNotReady from ex
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        CONF_HOST: entry.data[CONF_HOST],
-        CONF_DEVICE_ID: entry.data[CONF_DEVICE_ID],
-        CONF_NAME: entry.data[CONF_NAME],
-        DEVICES: devices,
-        PROTOCOL: lookin_protocol,
-    }
+    meteo_coordinator = DataUpdateCoordinator(
+        hass,
+        LOGGER,
+        name=entry.title,
+        update_method=lookin_protocol.get_meteo_sensor,
+        update_interval=timedelta(
+            minutes=5
+        ),  # Updates are pushed (fallback is polling)
+    )
+    await meteo_coordinator.async_config_entry_first_refresh()
+
+    lookin_udp_subs = LookinUDPSubscriptions()
+    entry.async_on_unload(await start_lookin_udp(lookin_udp_subs))
+
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = LookinData(
+        lookin_udp_subs=lookin_udp_subs,
+        lookin_device=lookin_device,
+        meteo_coordinator=meteo_coordinator,
+        devices=devices,
+        lookin_protocol=lookin_protocol,
+    )
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
 
 
-class LookinSensor(Entity):
-    def __init__(
-        self, device_id: str, device_name: str, unit_of_measurement: str
-    ) -> None:
-        self.current_value: Optional[Any] = None
-        self._device_id = device_id
-        self._name = f"{DOMAIN}.{device_name}.{self.device_class}"
-        self._unique_id = f"{device_id}-{self.device_class}"
-        self._unit_of_measurement = unit_of_measurement
-        self._is_available = True
-        self._firmware: Optional[str] = None
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def state(self) -> Optional[Any]:
-        return self.current_value
-
-    @property
-    def unique_id(self) -> str:
-        return self._unique_id
-
-    @property
-    def device_id(self) -> str:
-        return self._device_id
-
-    @property
-    def unit_of_measurement(self) -> str:
-        return self._unit_of_measurement
-
-    @property
-    def available(self) -> bool:
-        return self._is_available
-
-    @property
-    def device_info(self) -> Dict[str, Any]:
-        return {
-            "identifiers": {(DOMAIN, self.device_id)},
-            "name": "LOOKin climate sensor",
-            "manufacturer": "LOOKin",
-            "model": "Remote",
-            "sw_version": self._firmware,
-            "via_device": (DOMAIN, self._device_id),
-        }
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        hass.data[DOMAIN].pop(entry.entry_id)
+    return unload_ok
