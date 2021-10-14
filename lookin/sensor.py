@@ -93,8 +93,6 @@ class LookinSensorEntity(CoordinatorEntity, SensorEntity, Entity):
     @callback
     def _async_push_update(self, msg: dict[str, str]) -> None:
         """Process an update pushed via UDP."""
-        print(f"{msg=}")
-        print(type(msg))
         if msg["sensor_id"] != METEO_SENSOR_ID or int(msg["event_id"]):
             return
         LOGGER.debug("Processing push message for meteo sensor: %s", msg)
