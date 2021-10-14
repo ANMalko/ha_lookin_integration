@@ -62,17 +62,6 @@ HASS_TO_LOOKIN_SWING_MODE: dict[str, int] = {
 }
 
 
-LOOKIN_FAN_MODE_IDX_TO_HASS: Final = [FAN_AUTO, FAN_LOW, FAN_MIDDLE, FAN_HIGH]
-LOOKIN_SWING_MODE_IDX_TO_HASS: Final = [SWING_OFF, SWING_BOTH]
-LOOKIN_HVAC_MODE_IDX_TO_HASS: Final = [
-    HVAC_MODE_OFF,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_COOL,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_DRY,
-    HVAC_MODE_FAN_ONLY,
-]
-
 MIN_TEMP: Final = 16
 MAX_TEMP: Final = 30
 TEMP_OFFSET: Final = 16
@@ -228,9 +217,14 @@ class ConditionerEntity(LookinEntity, CoordinatorEntity, ClimateEntity):
     @callback
     def _async_push_update(self, msg):
         """Process an update pushed via UDP."""
-        if msg["sensor_id"] == IR_SENSOR_ID:
-            LOGGER.debug("Saw IR signal message: %s, triggering update", msg)
-            self.hass.async_create_task(self.coordinator.async_request_refresh())
+        if msg["sensor_id"] != IR_SENSOR_ID:
+            return
+        ir_uuid = msg["value"][:4]
+        if ir_uuid != self._uuid:
+            return
+        LOGGER.debug("Saw IR signal message: %s", msg)
+        self._climate.update_from_status(msg["value"][-4:])
+        self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Call when the entity is added to hass."""
