@@ -1,8 +1,8 @@
 """The lookin integration climate platform."""
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
+import logging
 from typing import Any, Final, cast
 
 from homeassistant.components.climate import ClimateEntity
