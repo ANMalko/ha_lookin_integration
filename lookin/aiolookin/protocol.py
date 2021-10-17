@@ -193,8 +193,7 @@ class LookInHttpProtocol:
         response = await self._session.post(
             url=f"{self._api_uri}{INFO_URL}", data=json.dumps({"name": name})
         )
-        async with response:
-            validate_response(response)
+        validate_response(response)
 
     async def get_meteo_sensor(self) -> MeteoSensor:
         response = await self._session.get(
@@ -250,8 +249,7 @@ class LookInHttpProtocol:
             timeout=CLIENT_TIMEOUTS,
         )
 
-        async with response:
-            validate_response(response)
+        validate_response(response)
 
     async def send_ir(self, ir_format: IRFormat, codes: str) -> None:
         if ir_format == IRFormat.ProntoHEX:
@@ -264,8 +262,7 @@ class LookInHttpProtocol:
             url=url.format(codes=codes), timeout=CLIENT_TIMEOUTS
         )
 
-        async with response:
-            validate_response(response)
+        validate_response(response)
 
     async def update_conditioner(self, climate: Climate) -> None:
         """Update the conditioner from a Climate object."""
@@ -275,5 +272,4 @@ class LookInHttpProtocol:
             timeout=CLIENT_TIMEOUTS,
         )
 
-        async with response:
-            validate_response(response)
+        validate_response(response)
