@@ -1,11 +1,10 @@
 """The lookin integration."""
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 import aiohttp
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
@@ -25,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     host = entry.data[CONF_HOST]
     lookin_protocol = LookInHttpProtocol(
-        host=host, session=async_get_clientsession(hass)
+        api_uri=f"http://{host}", session=async_get_clientsession(hass)
     )
 
     try:
