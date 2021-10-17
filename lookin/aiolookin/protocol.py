@@ -42,7 +42,7 @@ class SensorID(Enum):
     Meteo = "FE"
 
 
-async def validate_response(response: ClientResponse) -> None:
+def validate_response(response: ClientResponse) -> None:
     if response.status not in (200, 201, 204):
         raise NoUsableService
 
@@ -184,7 +184,7 @@ class LookInHttpProtocol:
             url=f"{self._api_uri}{INFO_URL}", timeout=CLIENT_TIMEOUTS
         )
         async with response:
-            await validate_response(response)
+            validate_response(response)
             payload = await response.json()
 
         return Device(_data=payload)
@@ -194,7 +194,7 @@ class LookInHttpProtocol:
             url=f"{self._api_uri}{INFO_URL}", data=json.dumps({"name": name})
         )
         async with response:
-            await validate_response(response)
+            validate_response(response)
 
     async def get_meteo_sensor(self) -> MeteoSensor:
         response = await self._session.get(
@@ -202,7 +202,7 @@ class LookInHttpProtocol:
         )
 
         async with response:
-            await validate_response(response)
+            validate_response(response)
             payload = await response.json()
 
         return MeteoSensor(_data=payload)
@@ -213,7 +213,7 @@ class LookInHttpProtocol:
         )
 
         async with response:
-            await validate_response(response)
+            validate_response(response)
             payload = await response.json()
 
         return payload
@@ -226,7 +226,7 @@ class LookInHttpProtocol:
         )
 
         async with response:
-            await validate_response(response)
+            validate_response(response)
             payload = await response.json()
 
         return payload
@@ -251,7 +251,7 @@ class LookInHttpProtocol:
         )
 
         async with response:
-            await validate_response(response)
+            validate_response(response)
 
     async def send_ir(self, ir_format: IRFormat, codes: str) -> None:
         if ir_format == IRFormat.ProntoHEX:
@@ -265,7 +265,7 @@ class LookInHttpProtocol:
         )
 
         async with response:
-            await validate_response(response)
+            validate_response(response)
 
     async def update_conditioner(self, climate: Climate) -> None:
         """Update the conditioner from a Climate object."""
@@ -276,4 +276,4 @@ class LookInHttpProtocol:
         )
 
         async with response:
-            await validate_response(response)
+            validate_response(response)
