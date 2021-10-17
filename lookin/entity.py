@@ -1,11 +1,31 @@
 """The lookin integration entity."""
 from __future__ import annotations
 
-from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.entity import DeviceInfo, Entity
 
 from .aiolookin import POWER_CMD, POWER_OFF_CMD, POWER_ON_CMD, Climate, Remote
 from .const import DOMAIN
 from .models import LookinData
+
+
+class LookinDeviceEntity(Entity):
+    """A lookin device entity on the device itself."""
+
+    _attr_should_poll = False
+
+    def __init__(self, lookin_data: LookinData) -> None:
+        """Init the lookin device entity."""
+        super().__init__()
+        self._lookin_device = lookin_data.lookin_device
+        self._lookin_protocol = lookin_data.lookin_protocol
+        self._lookin_udp_subs = lookin_data.lookin_udp_subs
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._lookin_device.id)},
+            name=self._lookin_device.name,
+            manufacturer="LOOKin",
+            model="LOOKin 2",
+            sw_version=self._lookin_device.firmware,
+        )
 
 
 class LookinEntity(Entity):
@@ -30,12 +50,12 @@ class LookinEntity(Entity):
         self._function_names = {function.name for function in self._device.functions}
         self._attr_unique_id = uuid
         self._attr_name = self._device.name
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._uuid)},
-            "name": self._device.name,
-            "model": self._device.device_type,
-            "via_device": (DOMAIN, self._lookin_device.id),
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._uuid)},
+            name=self._device.name,
+            model=self._device.device_type,
+            via_device=(DOMAIN, self._lookin_device.id),
+        )
 
     async def _async_send_command(self, command: str) -> None:
         """Send command from saved IR device."""
