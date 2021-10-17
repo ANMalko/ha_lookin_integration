@@ -183,9 +183,8 @@ class LookInHttpProtocol:
         response = await self._session.get(
             url=f"{self._api_uri}{INFO_URL}", timeout=CLIENT_TIMEOUTS
         )
-        async with response:
-            validate_response(response)
-            payload = await response.json()
+        validate_response(response)
+        payload = await response.json()
 
         return Device(_data=payload)
 
@@ -200,9 +199,8 @@ class LookInHttpProtocol:
             url=f"{self._api_uri}{METEO_SENSOR_URL}", timeout=CLIENT_TIMEOUTS
         )
 
-        async with response:
-            validate_response(response)
-            payload = await response.json()
+        validate_response(response)
+        payload = await response.json()
 
         return MeteoSensor(_data=payload)
 
@@ -211,9 +209,8 @@ class LookInHttpProtocol:
             url=f"{self._api_uri}{DEVICES_INFO_URL}", timeout=CLIENT_TIMEOUTS
         )
 
-        async with response:
-            validate_response(response)
-            payload = await response.json()
+        validate_response(response)
+        payload = await response.json()
 
         return payload
 
@@ -224,9 +221,8 @@ class LookInHttpProtocol:
             timeout=CLIENT_TIMEOUTS,
         )
 
-        async with response:
-            validate_response(response)
-            payload = await response.json()
+        validate_response(response)
+        payload = await response.json()
 
         return payload
 
