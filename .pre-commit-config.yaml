@@ -35,15 +35,6 @@ repos:
           - flake8-noqa==1.1.0
           - mccabe==0.6.1
         files: ^(tests)/.+\.py$
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.0
-    hooks:
-      - id: bandit
-        args:
-          - --quiet
-          - --format=custom
-          - --configfile=tests/bandit.yaml
-        files: ^(tests)/.+\.py$
   - repo: https://github.com/PyCQA/isort
     rev: 5.9.3
     hooks:
