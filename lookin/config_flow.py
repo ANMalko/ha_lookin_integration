@@ -6,6 +6,7 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
+
 from aiolookin import Device, LookInHttpProtocol, NoUsableService
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
@@ -18,7 +19,7 @@ from .const import DOMAIN
 LOGGER = logging.getLogger(__name__)
 
 
-class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
+class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for lookin."""
 
     def __init__(self) -> None:
