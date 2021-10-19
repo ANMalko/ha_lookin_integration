@@ -6,7 +6,6 @@ import logging
 from typing import Any, Final, cast
 
 from aiolookin import Climate, MeteoSensor, SensorID
-
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     FAN_AUTO,

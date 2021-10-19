@@ -5,9 +5,9 @@ import logging
 from typing import Any
 
 import aiohttp
-from aiolookin import Device, LookInHttpProtocol, NoUsableService
 import voluptuous as vol
 
+from aiolookin import Device, LookInHttpProtocol, NoUsableService
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
 from homeassistant.data_entry_flow import FlowResult

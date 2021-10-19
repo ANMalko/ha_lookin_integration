@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from aiolookin import POWER_CMD, POWER_OFF_CMD, POWER_ON_CMD, Climate, Remote
-
 from homeassistant.helpers.entity import DeviceInfo, Entity
 
 from .const import DOMAIN

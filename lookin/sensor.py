@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 
 from aiolookin import MeteoSensor, SensorID
-
 from homeassistant.components.sensor import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,

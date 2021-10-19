@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any, Final
 
 from aiolookin import Remote
-
 from homeassistant.components.fan import SUPPORT_OSCILLATE, FanEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant

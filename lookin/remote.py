@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 from aiolookin import IRFormat
-
 from homeassistant.components.remote import ATTR_DELAY_SECS, RemoteEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF

@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any
 
 from aiolookin import Remote
-
 from homeassistant.components.vacuum import (
     SERVICE_START,
     SERVICE_STOP,
