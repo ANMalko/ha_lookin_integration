@@ -4,9 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from aiolookin import Device, LookInHttpProtocol, LookinUDPSubscriptions
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-
-from .aiolookin import Device, LookInHttpProtocol, LookinUDPSubscriptions
 
 
 @dataclass

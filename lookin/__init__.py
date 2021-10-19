@@ -5,6 +5,8 @@ import logging
 from datetime import timedelta
 
 import aiohttp
+from aiolookin import (LookInHttpProtocol, LookinUDPSubscriptions,
+                       start_lookin_udp)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
@@ -12,7 +14,6 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .aiolookin import LookInHttpProtocol, LookinUDPSubscriptions, start_lookin_udp
 from .const import DOMAIN, PLATFORMS
 from .models import LookinData
 

@@ -1,25 +1,18 @@
 """The lookin integration light platform."""
 from __future__ import annotations
 
-from homeassistant.components.media_player import (
-    DEVICE_CLASS_RECEIVER,
-    DEVICE_CLASS_TV,
-    MediaPlayerEntity,
-)
+from aiolookin import Remote
+from homeassistant.components.media_player import (DEVICE_CLASS_RECEIVER,
+                                                   DEVICE_CLASS_TV,
+                                                   MediaPlayerEntity)
 from homeassistant.components.media_player.const import (
-    SUPPORT_NEXT_TRACK,
-    SUPPORT_PREVIOUS_TRACK,
-    SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON,
-    SUPPORT_VOLUME_MUTE,
-    SUPPORT_VOLUME_STEP,
-)
+    SUPPORT_NEXT_TRACK, SUPPORT_PREVIOUS_TRACK, SUPPORT_TURN_OFF,
+    SUPPORT_TURN_ON, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_PLAYING
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .aiolookin import Remote
 from .const import DOMAIN
 from .entity import LookinPowerEntity
 from .models import LookinData
