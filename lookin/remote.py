@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 import logging
 from typing import Any
 
 from aiolookin import IRFormat
+
 from homeassistant.components.remote import ATTR_DELAY_SECS, RemoteEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF
@@ -60,7 +62,7 @@ class LookinRemoteEntity(LookinDeviceEntity, RemoteEntity, RestoreEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
 
-    async def async_send_command(self, command: list[str], **kwargs: Any) -> None:
+    async def async_send_command(self, command: Iterable[str], **kwargs: Any) -> None:
         """Send a list of commands."""
         delay = kwargs.get(ATTR_DELAY_SECS)
 
@@ -76,7 +78,7 @@ class LookinRemoteEntity(LookinDeviceEntity, RemoteEntity, RestoreEntity):
             ir_format = None
             for prefix, ir_format_ in KNOWN_FORMAT_PREFIXES.items():
                 if codes.startswith(prefix):
-                    codes = codes[(len(prefix)):]
+                    codes = codes[(len(prefix)) :]
                     ir_format = ir_format_
                     break
 

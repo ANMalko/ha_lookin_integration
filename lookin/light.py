@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from aiolookin import Remote
+
 from homeassistant.components.light import COLOR_MODE_ONOFF, LightEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant

@@ -1,12 +1,12 @@
 """The lookin integration."""
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
+import logging
 
 import aiohttp
-from aiolookin import (LookInHttpProtocol, LookinUDPSubscriptions,
-                       start_lookin_udp)
+from aiolookin import LookInHttpProtocol, LookinUDPSubscriptions, start_lookin_udp
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
@@ -34,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except aiohttp.ClientError as ex:
         raise ConfigEntryNotReady from ex
 
-    meteo_coordinator = DataUpdateCoordinator(
+    meteo_coordinator: DataUpdateCoordinator = DataUpdateCoordinator(
         hass,
         LOGGER,
         name=entry.title,

@@ -4,9 +4,14 @@ from __future__ import annotations
 from typing import Any
 
 from aiolookin import Remote
-from homeassistant.components.vacuum import (SERVICE_START, SERVICE_STOP,
-                                             SUPPORT_TURN_OFF, SUPPORT_TURN_ON,
-                                             VacuumEntity)
+
+from homeassistant.components.vacuum import (
+    SERVICE_START,
+    SERVICE_STOP,
+    SUPPORT_TURN_OFF,
+    SUPPORT_TURN_ON,
+    VacuumEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
