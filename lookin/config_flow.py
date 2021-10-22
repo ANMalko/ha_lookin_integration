@@ -5,21 +5,20 @@ import logging
 from typing import Any
 
 import aiohttp
-import voluptuous as vol
-
 from aiolookin import Device, LookInHttpProtocol, NoUsableService
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import DiscoveryInfoType
+import voluptuous as vol
 
 from .const import DOMAIN
 
 LOGGER = logging.getLogger(__name__)
 
 
-class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
     """Handle a config flow for lookin."""
 
     def __init__(self) -> None:
