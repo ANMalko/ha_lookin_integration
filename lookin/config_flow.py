@@ -6,13 +6,12 @@ from typing import Any
 
 import aiohttp
 from aiolookin import Device, LookInHttpProtocol, NoUsableService
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import DiscoveryInfoType
+import voluptuous as vol
 
 from .const import DOMAIN
 
