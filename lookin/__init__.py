@@ -6,7 +6,6 @@ import logging
 
 import aiohttp
 from aiolookin import LookInHttpProtocol, LookinUDPSubscriptions, start_lookin_udp
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
