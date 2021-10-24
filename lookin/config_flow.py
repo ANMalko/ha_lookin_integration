@@ -83,7 +83,8 @@ class LookinFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):  # type: igno
     async def _validate_device(self, host: str) -> Device:
         """Validate we can connect to the device."""
         session = async_get_clientsession(self.hass)
-        lookin_protocol = LookInHttpProtocol(host, session)
+        lookin_protocol = LookInHttpProtocol(f"http://{host}", session)
+
         return await lookin_protocol.get_info()
 
     async def async_step_discovery_confirm(
