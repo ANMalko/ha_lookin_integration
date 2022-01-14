@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterable
+from collections.abc import Callable, Coroutine, Iterable
+from datetime import timedelta
 import logging
 from typing import Any
 
-from aiolookin import IRFormat
+from aiolookin import IRFormat, Remote
 from homeassistant.components.remote import ATTR_DELAY_SECS, RemoteEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF
@@ -14,14 +15,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
-from .entity import LookinDeviceEntity
+from .entity import LookinPowerEntity
 from .models import LookinData
 
 KNOWN_FORMAT_PREFIXES = {f"{format.value}:": format for format in IRFormat}
 
-_LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -31,15 +33,59 @@ async def async_setup_entry(
 ) -> None:
     """Set up the light platform for lookin from a config entry."""
     lookin_data: LookinData = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([LookinRemoteEntity(lookin_data)])
+    entities = []
+
+    for remote in lookin_data.devices:
+        if remote["Type"] != "00":
+            continue
+        uuid = remote["UUID"]
+
+        def _wrap_async_update(
+            uuid: str,
+        ) -> Callable[[], Coroutine[None, Any, Remote]]:
+            """Create a function to capture the uuid cell variable."""
+
+            async def _async_update() -> Remote:
+                return await lookin_data.lookin_protocol.get_remote(uuid)
+
+            return _async_update
+
+        coordinator = DataUpdateCoordinator(
+            hass,
+            LOGGER,
+            name=f"{config_entry.title} {uuid}",
+            update_method=_wrap_async_update(uuid),
+            update_interval=timedelta(
+                seconds=60
+            ),  # Updates are pushed (fallback is polling)
+        )
+        await coordinator.async_refresh()
+        device: Remote = coordinator.data
+
+        entities.append(
+            LookinRemoteEntity(
+                uuid=uuid,
+                device=device,
+                lookin_data=lookin_data,
+                coordinator=coordinator,
+            )
+        )
+
+    async_add_entities(entities)
 
 
-class LookinRemoteEntity(LookinDeviceEntity, RemoteEntity, RestoreEntity):
+class LookinRemoteEntity(LookinPowerEntity, RemoteEntity, RestoreEntity):
     """Representation of a lookin remote."""
 
-    def __init__(self, lookin_data: LookinData) -> None:
+    def __init__(
+        self,
+        uuid: str,
+        device: Remote,
+        lookin_data: LookinData,
+        coordinator: DataUpdateCoordinator,
+    ) -> None:
         """Initialize the remote."""
-        super().__init__(lookin_data)
+        super().__init__(coordinator, uuid, device, lookin_data)
         self._attr_name = f"{self._lookin_device.name} Remote"
         self._attr_unique_id = self._lookin_device.id
         self._attr_is_on = True
@@ -77,7 +123,7 @@ class LookinRemoteEntity(LookinDeviceEntity, RemoteEntity, RestoreEntity):
             ir_format = None
             for prefix, ir_format_ in KNOWN_FORMAT_PREFIXES.items():
                 if codes.startswith(prefix):
-                    codes = codes[(len(prefix)) :]
+                    codes = codes[(len(prefix)):]
                     ir_format = ir_format_
                     break
 

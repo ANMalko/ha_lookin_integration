@@ -1,2 +1,2 @@
+aiolookin>=0.1.0
 homeassistant>=2021.6.6
-aiolookin>=0.0.4
