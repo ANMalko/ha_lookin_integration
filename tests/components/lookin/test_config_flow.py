@@ -1,10 +1,11 @@
-"""Define tests for the Flux LED/Magic Home config flow."""
+"""Define tests for the lookin config flow."""
 from __future__ import annotations
 
+import dataclasses
 from unittest.mock import patch
 
+from aiolookin import NoUsableService
 from homeassistant import config_entries
-from homeassistant.components.lookin.aiolookin import NoUsableService
 from homeassistant.components.lookin.const import DOMAIN
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
@@ -136,8 +137,8 @@ async def test_discovered_zeroconf(hass):
     assert mock_async_setup_entry.called
 
     entry = hass.config_entries.async_entries(DOMAIN)[0]
-    zc_data_new_ip = ZEROCONF_DATA.copy()
-    zc_data_new_ip["host"] = "127.0.0.2"
+    zc_data_new_ip = dataclasses.replace(ZEROCONF_DATA)
+    zc_data_new_ip.host = "127.0.0.2"
 
     with _patch_get_info(), patch(
         f"{MODULE}.async_setup_entry", return_value=True

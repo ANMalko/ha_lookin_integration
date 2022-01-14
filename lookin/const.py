@@ -3,13 +3,17 @@ from __future__ import annotations
 
 from typing import Final
 
+from homeassistant.const import Platform
+
+MODEL_NAMES: Final = ["LOOKin Remote", "LOOKin Remote", "LOOKin Remote2"]
+
 DOMAIN: Final = "lookin"
 PLATFORMS: Final = [
-    "sensor",
-    "climate",
-    "media_player",
-    "light",
-    "vacuum",
-    "fan",
-    "remote",
+    Platform.CLIMATE,
+    Platform.FAN,
+    Platform.LIGHT,
+    Platform.MEDIA_PLAYER,
+    Platform.REMOTE,
+    Platform.SENSOR,
+    Platform.VACUUM,
 ]
