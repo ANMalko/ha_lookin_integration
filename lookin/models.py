@@ -17,3 +17,4 @@ class LookinData:
     meteo_coordinator: DataUpdateCoordinator
     devices: list[dict[str, Any]]
     lookin_protocol: LookInHttpProtocol
+    device_coordinators: dict[str, DataUpdateCoordinator]
